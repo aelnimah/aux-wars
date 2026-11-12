@@ -60,7 +60,7 @@ async function api(req, res, url) {
   if (req.method === 'GET') {
     if (route === '/api/exists') return rooms.has(String(url.searchParams.get('code') || '').toUpperCase()) ? send(res, 200, { ok: true }) : send(res, 404, { error: 'gone' });
     if (route === '/api/info') return send(res, 200, { urls: lanUrls(), port: PORT });
-    if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, chart }) => ({ id, emoji, name, desc, live: chart !== undefined })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
+    if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, chart, spotlight }) => ({ id, emoji, name, desc, live: chart !== undefined || !!spotlight })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
     if (route === '/api/qr') {
       const text = url.searchParams.get('text') || '';
       if (!text || text.length > 300) return send(res, 400, { error: 'bad text' });
@@ -89,7 +89,7 @@ async function api(req, res, url) {
   if (route === '/api/create') {
     const room = createRoom(body);
     hookRoom(room);
-    return send(res, 200, { code: room.code, key: room.hostKey });
+    return send(res, 200, { code: room.code, key: room.hostKey, hostPid: room.hostPid || null });
   }
   if (route === '/api/join') {
     const room = getRoom(body.code);

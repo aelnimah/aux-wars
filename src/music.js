@@ -69,4 +69,32 @@ export const music = {
       return [];
     }
   },
+
+  /** Random artists currently on Deezer's charts: [{id, name}]. */
+  async chartArtists() {
+    if (OFFLINE) return [];
+    const hit = cache.get('chart-artists');
+    if (hit && Date.now() - hit.at < 3600_000) return hit.list;
+    try {
+      const j = await getJson('https://api.deezer.com/chart/0/artists?limit=60');
+      const list = (j.data || []).map((a) => ({ id: a.id, name: a.name }));
+      cache.set('chart-artists', { at: Date.now(), list });
+      return list;
+    } catch {
+      return [];
+    }
+  },
+
+  /** An artist's top tracks with previews, as resolved songs. */
+  async artistTop(artist) {
+    if (OFFLINE) return [];
+    try {
+      const j = await getJson(`https://api.deezer.com/artist/${artist.id}/top?limit=40`);
+      return (j.data || [])
+        .filter((t) => t.preview)
+        .map((t) => ({ artist: artist.name, title: t.title_short || t.title, resolved: shape(t) }));
+    } catch {
+      return [];
+    }
+  },
 };

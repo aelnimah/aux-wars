@@ -19,19 +19,25 @@ No Wi-Fi handy? Use **+ Add test players** in the lobby to play alone against si
 
 ## How a game goes
 
-1. **Setup:** pick themes (or leave them all on), game length (4, 8 or 16 qualifying rounds), reveal speed, optional vote timer.
+1. **Setup:** pick a length (Quick 4 / Classic 8 / Marathon 16 rounds) and leave **Surprise me** on, or choose themes yourself.
+   "Pace & options" has reveal speed, a voting timer, auto-continue after results, and whether you vote too.
 2. **Lobby:** players scan the QR code or type the room code.
-3. **Qualifying rounds:** eight songs are revealed one by one, each with a ~30 second preview playing from the host's speakers.
-   Everyone votes for one favorite (changeable until the host closes voting). Votes stay hidden until the results reveal.
-4. **Results:** percentages plus who voted for what. Ties trigger a tiebreak vote between only the tied songs.
+3. **Each round** opens with a splash showing the question ("Best breakup song?"), then eight songs are revealed one at a time with
+   a ~30 second preview playing from the host's speakers. Everyone votes for one favorite (changeable until voting closes).
+   Votes stay hidden until the results reveal.
+4. **Results:** percentages plus who voted for what. Ties get a tiebreak vote between only the tied songs, or a random draw.
 5. **Knockout:** every qualifying winner is paired up head to head until a champion remains.
-6. **Finale:** champion, plus fun stats (closest music match, most divided round).
+6. **Finale:** champion, plus fun stats (closest music match, most divided round). "Play again" returns to the lobby.
 
 4 qualifiers = 7 matches, 8 = 15, 16 = 31 (plus tiebreaks).
 
+Host keys: **Space** = the big button, **P** = pause/resume auto-reveal, **M** = mute.
+
 ## Where the songs come from
 
-- **Themes** (`src/packs.js`) are curated lists with a question each. Add your own: it's one line per song (`Artist - Title`).
+- **Themes** (`src/packs.js`) are 27 curated lists with a question each (pregame, breakup, 80s, country, Latin, karaoke...). Add your own: it's one line per song (`Artist - Title`).
+- **Surprise me** mixes all themes at random, so every game is different and themes don't repeat.
+- **Artist Spotlight** picks random artists from the live charts: "Best <artist> song?".
 - **Live charts** pull Deezer's current top tracks per genre, so those rounds are different every time.
 - **Previews and artwork** come from Deezer's free public API (no account or key). If Deezer can't be reached, the game still works:
   songs just show colored cards and have no audio (the host can play them from another app).

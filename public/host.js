@@ -1,144 +1,212 @@
-import { $, esc, api, cover, connect } from './shared.js';
+import { $, esc, api, cover, connect, morph } from './shared.js';
 
 const app = $('#app');
-let session = JSON.parse(localStorage.getItem('aux-host') || 'null'); // {code, key}
-let s = null;           // latest server state
+let session = JSON.parse(localStorage.getItem('aux-host') || 'null'); // {code, key, hostPid}
+let s = null;                       // latest server state
 let info = { urls: [], port: 3000 };
 let meta = { packs: [], qualifiers: [] };
-let form = { packs: null, qualifiers: 8, autoSeconds: 12, voteSeconds: 0 };
-let err = '';
+let form = { qualifiers: 8, mode: 'surprise', packs: null, autoSeconds: 12, voteSeconds: 0, autoNext: 0, hostPlays: true, more: false };
+let err = '', notice = '';
 let es = null;
+let animKey = '';                   // which results screen already played its bar animation
+let blocked = false;                // browser refused to autoplay
+
+// ---------- audio (host speakers) ----------
 const audio = new Audio();
-audio.volume = 1;
-let lastPlayKey = '';
-let blocked = false;
-let tick = null;
-
-const call = (action, extra = {}) => api('/api/host', { code: session.code, key: session.key, action, ...extra }).catch((e) => { err = e.message; render(); });
-
-// ---------- audio ----------
+let vol = Number(localStorage.getItem('aux-vol') ?? 80) / 100;
+let muted = localStorage.getItem('aux-muted') === '1';
+let lastPlayKey = '', fade = null;
+const target = () => (muted ? 0 : vol);
+function ramp(to, ms, done) {
+  clearInterval(fade);
+  const from = audio.volume, steps = 10; let i = 0;
+  fade = setInterval(() => {
+    i++; audio.volume = Math.max(0, Math.min(1, from + ((to - from) * i) / steps));
+    if (i >= steps) { clearInterval(fade); done?.(); }
+  }, ms / steps);
+}
+function stopAudio() { if (!audio.paused) ramp(0, 250, () => audio.pause()); }
 function syncAudio() {
   const m = s?.match;
-  if (!m || !['reveal', 'voting'].includes(s.phase)) { audio.pause(); lastPlayKey = ''; return; }
+  if (!m || !['reveal', 'voting'].includes(s.phase)) { stopAudio(); lastPlayKey = ''; return; }
   const k = `${m.token}:${m.nowPlaying}:${m.playNonce}`;
   if (k === lastPlayKey) return;
   lastPlayKey = k;
   const song = m.songs.find((x) => x.id === m.nowPlaying);
-  if (!song?.preview) { audio.pause(); return; }
+  if (!song?.preview) { stopAudio(); return; }
+  clearInterval(fade);
   audio.src = song.preview;
-  audio.play().then(() => { blocked = false; }).catch(() => { blocked = true; render(); });
+  audio.volume = 0;
+  audio.play().then(() => { blocked = false; ramp(target(), 400); }).catch(() => { blocked = true; render(); });
+}
+$('#vol').value = Math.round(vol * 100);
+$('#mute').textContent = muted ? '🔇' : '🔊';
+$('#vol').oninput = (e) => { vol = e.target.value / 100; localStorage.setItem('aux-vol', e.target.value); if (!muted) audio.volume = vol; };
+$('#mute').onclick = toggleMute;
+function toggleMute() {
+  muted = !muted; localStorage.setItem('aux-muted', muted ? '1' : '0');
+  $('#mute').textContent = muted ? '🔇' : '🔊'; audio.volume = target();
+}
+
+// ---------- helpers ----------
+const call = (action, extra = {}) =>
+  api('/api/host', { code: session.code, key: session.key, action, ...extra }).catch((e) => { err = e.message; render(); });
+
+function estimate() {
+  const secs = form.autoSeconds || 12, q = form.qualifiers;
+  const qual = q * (4 + 8 * secs + 45), ko = (q - 1) * (4 + 2 * secs + 35);
+  return Math.max(5, Math.round((qual + ko) / 60 / 5) * 5);
+}
+const joinUrl = (base = info.urls[0] || location.origin) => `${base}/join?room=${s.code}`;
+
+// What the big button (and Space/Enter) does right now.
+function primary() {
+  if (!s) return null;
+  const m = s.match;
+  switch (s.phase) {
+    case 'lobby': return s.players.length ? { act: 'start', label: 'Start game' } : null;
+    case 'intro': return { act: 'reveal', label: 'Skip intro ▶' };
+    case 'reveal': return m.revealed >= m.total ? { act: 'reveal', label: 'Open voting 🗳️' } : { act: 'reveal', label: 'Reveal next song ▶' };
+    case 'voting': return { act: 'closeVoting', label: 'Reveal results' };
+    case 'results':
+      if (m.result.tie) return m.tieCount >= 2 ? { act: 'randomTie', label: '🎲 Random draw' } : { act: 'tiebreak', label: 'Tiebreak vote' };
+      return { act: 'next', label: s.progress.n >= s.progress.of ? 'Crown the champion 👑' : 'Next →' };
+    case 'champion': return { act: 'again', label: 'Play again' };
+  }
+  return null;
 }
 
 // ---------- rendering ----------
-function joinUrl() {
-  const base = info.urls[0] || location.origin;
-  return `${base}/join?room=${s.code}`;
-}
-
 function render() {
-  if (!session || !s) return renderSetup();
-  const parts = { lobby: renderLobby, loading: renderLoading, reveal: renderMatch, voting: renderMatch, results: renderMatch, champion: renderChampion }[s.phase];
-  const prog = s.progress ? `<span class="progress">Match ${s.progress.n} of ${s.progress.of}</span>` : '';
-  app.innerHTML = `
-    <div class="topbar"><span class="logo">AUX WARS</span>${prog}
-      <span class="progress">Room <b>${esc(s.code)}</b> · ${s.players.length} player${s.players.length === 1 ? '' : 's'}</span></div>
-    ${blocked ? '<div class="banner" data-act="unmute">🔇 Your browser blocked sound. Click here to enable audio.</div>' : ''}
-    ${err ? `<div class="err">${esc(err)}</div>` : ''}
-    ${parts()}`;
-  err = '';
+  document.body.style.setProperty('--h', s?.match?.hue ?? 330);
+  morph(app, !session || !s ? setupHtml() : shellHtml());
+  postRender();
 }
 
-function renderSetup() {
-  if (!meta.packs.length) { app.innerHTML = '<div class="loading"><div><div class="spinner"></div></div></div>'; return; }
+function postRender() {
+  const k = s?.match && s.phase === 'results' ? `${s.match.token}` : '';
+  if (k && animKey !== k) {
+    animKey = k;
+    requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll('[data-w]').forEach((el) => { el.style.width = `${el.dataset.w}%`; })));
+  }
+}
+
+function shellHtml() {
+  const body = { lobby: lobbyHtml, loading: loadingHtml, intro: introHtml, reveal: matchHtml, voting: matchHtml, results: matchHtml, champion: championHtml }[s.phase]();
+  const p = s.progress;
+  const prog = p ? `<div class="mid"><div class="progress"><span>${s.match?.kind === 'knockout' ? '⚔️ Knockout' : 'Qualifying'}</span><span>Match ${p.n} of ${p.of}</span></div><div class="track"><i style="width:${Math.round(((p.n - (s.phase === 'champion' ? 0 : 1)) / p.of) * 100)}%"></i></div></div>` : '<div></div>';
+  return `<div class="topbar"><span class="logo">AUX WARS</span>${prog}<span class="roomtag">Room <b>${esc(s.code)}</b> · ${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}</span></div>
+    ${blocked ? '<div class="banner" data-act="unmute">🔇 Your browser blocked sound. Click anywhere here to turn it on.</div>' : ''}
+    ${err ? `<div class="err" style="margin-bottom:14px">${esc(err)}</div>` : ''}
+    ${body}`;
+}
+
+function setupHtml() {
+  if (!meta.packs.length) return '<div class="loading"><div><div class="spinner"></div></div></div>';
   if (!form.packs) form.packs = meta.packs.filter((p) => !p.live).map((p) => p.id);
   const on = (id) => form.packs.includes(id);
-  const opt = (key, val, label) => `<button class="chip ${form[key] === val ? 'on' : ''}" data-act="set" data-key="${key}" data-val="${val}">${label}</button>`;
-  const need = form.qualifiers * 8;
-  app.innerHTML = `
-    <div class="setup">
-      <div><span class="logo" style="font-size:1.6rem">AUX WARS</span><h2 style="margin-top:14px">Set up the game</h2></div>
-      ${err ? `<div class="err">${esc(err)}</div>` : ''}
-      <div class="panel"><h3>Themes · each round asks a different question</h3>
-        <div class="chips">${meta.packs.map((p) => `<button class="pack ${on(p.id) ? 'on' : ''}" data-act="pack" data-id="${p.id}"><b>${p.emoji} ${esc(p.name)}${p.live ? ' · live' : ''}</b><small>${esc(p.desc)}</small></button>`).join('')}</div>
-        <p class="muted" style="margin-top:12px">Songs never repeat in a game. This game needs ${need} different songs. Live charts need an internet connection.</p></div>
-      <div class="panel"><h3>Game length</h3><div class="chips">
-        ${meta.qualifiers.map((x) => opt('qualifiers', x.q, `${x.q} qualifying rounds → ${x.total} matches`)).join('')}</div></div>
-      <div class="panel"><h3>Reveal speed · seconds of music per song</h3><div class="chips">
-        ${opt('autoSeconds', 0, 'Manual')}${opt('autoSeconds', 8, '8s')}${opt('autoSeconds', 12, '12s')}${opt('autoSeconds', 20, '20s')}</div></div>
-      <div class="panel"><h3>Voting timer</h3><div class="chips">
-        ${opt('voteSeconds', 0, 'No timer')}${opt('voteSeconds', 30, '30s')}${opt('voteSeconds', 60, '60s')}</div></div>
-      <div><button class="btn primary big" data-act="create">Create room →</button></div>
-    </div>`;
+  const chip = (key, val, label) => `<button class="chip ${form[key] === val ? 'on' : ''}" data-act="set" data-setting="${key}" data-val="${val}">${label}</button>`;
+  const len = (q, name, blurb) => `<button class="opt-card ${form.qualifiers === q ? 'on' : ''}" data-act="set" data-setting="qualifiers" data-val="${q}"><b>${name}</b><small>${q} rounds + ${q - 1} knockout matches · ${blurb}</small></button>`;
+  return `<div class="setup">
+    <div><span class="logo" style="font-size:1.5rem">AUX WARS</span><h2 style="margin-top:14px">Let’s set up the game</h2></div>
+    ${notice ? `<div class="banner">${esc(notice)}</div>` : ''}${err ? `<div class="err">${esc(err)}</div>` : ''}
+    <div class="sec"><h3>How long?</h3><div class="row">${len(4, 'Quick', 'short and sweet')}${len(8, 'Classic', 'the full experience')}${len(16, 'Marathon', 'serious aux energy')}</div>
+      <p class="est" style="margin-top:12px">Roughly <b>${estimate()} minutes</b> with these settings.</p></div>
+    <div class="sec"><h3>What are we voting on?</h3><div class="row">
+      <button class="opt-card ${form.mode === 'surprise' ? 'on' : ''}" data-act="set" data-setting="mode" data-val="surprise"><b>🎲 Surprise me</b><small>Every round gets a random theme: pregame, breakup songs, 80s, a random artist’s best… nobody picks.</small></button>
+      <button class="opt-card ${form.mode === 'custom' ? 'on' : ''}" data-act="set" data-setting="mode" data-val="custom"><b>🎛️ I’ll choose</b><small>Pick exactly which themes can show up.</small></button></div></div>
+    ${form.mode === 'custom' ? `<div class="sec"><h3>Themes · ${form.packs.length} picked <button class="chip small" data-act="allpacks">all</button> <button class="chip small" data-act="nopacks">none</button></h3>
+      <div class="row">${meta.packs.map((p) => `<button class="pack ${on(p.id) ? 'on' : ''}" data-key="${p.id}" data-act="pack" data-id="${p.id}"><b>${p.emoji} ${esc(p.name)}${p.live ? ' · live' : ''}</b><small>${esc(p.desc)}</small></button>`).join('')}</div>
+      <p class="note" style="margin-top:10px">Need ${form.qualifiers * 8} different songs. “Live” themes pull from the internet.</p></div>` : ''}
+    <div class="sec"><button class="chip" data-act="more">${form.more ? '▾' : '▸'} Pace &amp; options</button></div>
+    ${form.more ? `<div class="panel" style="display:grid;gap:22px">
+      <div class="sec"><h3>Music per song (auto-reveal)</h3><div class="row">${chip('autoSeconds', 0, 'Manual')}${chip('autoSeconds', 8, '8 sec')}${chip('autoSeconds', 12, '12 sec')}${chip('autoSeconds', 20, '20 sec')}</div></div>
+      <div class="sec"><h3>Voting timer</h3><div class="row">${chip('voteSeconds', 0, 'No timer')}${chip('voteSeconds', 30, '30 sec')}${chip('voteSeconds', 60, '60 sec')}</div></div>
+      <div class="sec"><h3>After results</h3><div class="row">${chip('autoNext', 0, 'Wait for me')}${chip('autoNext', 6, 'Continue after 6 sec')}${chip('autoNext', 10, 'Continue after 10 sec')}</div></div>
+      <div class="sec"><h3>You</h3><div class="row"><button class="chip ${form.hostPlays ? 'on' : ''}" data-act="toggle" data-setting="hostPlays">${form.hostPlays ? '✓' : ''} I’m playing too (vote from this screen)</button></div></div></div>` : ''}
+    <div><button class="btn primary big" data-act="create">Create room →</button></div></div>`;
 }
 
-function renderLobby() {
+function lobbyHtml() {
   const url = joinUrl();
-  const local = !info.urls.length;
+  const alt = info.urls.slice(1);
   return `<div class="lobby">
     <div><div class="qr"><img alt="Join QR code" src="/api/qr?text=${encodeURIComponent(url)}"></div>
       <div class="roomcode logo">${esc(s.code)}</div>
       <div class="joinurl">${esc(url.replace('http://', ''))}</div>
-      ${local ? '<p class="muted" style="margin-top:10px">No Wi-Fi network found. Phones can’t join until this computer is online.</p>' : '<p class="muted" style="margin-top:10px">Phones must be on the same Wi-Fi.</p>'}</div>
-    <div><h2 style="font-size:2.4rem">Waiting for players…</h2>
-      <div class="players">${s.players.map((p) => `<span class="chip">${esc(p.name)}${p.bot ? '' : ''} <button class="chip small" data-act="kick" data-pid="${p.id}" title="Remove">✕</button></span>`).join('') || '<span class="muted">Nobody yet. Scan the code!</span>'}</div>
+      <p class="note" style="margin-top:10px">${info.urls.length ? 'Phones must be on the same Wi-Fi as this computer.' : '⚠️ No Wi-Fi network found. Phones can’t join until this computer is online.'}</p>
+      ${alt.length ? `<p class="note" style="margin-top:6px">QR not working? Try: ${alt.map((u) => `<a style="color:var(--accent2)" href="${esc(joinUrl(u))}" onclick="return false">${esc(u.replace('http://', ''))}</a>`).join(', ')}</p>` : ''}
+      <button class="btn small" style="margin-top:12px" data-act="copy">📋 Copy join link</button></div>
+    <div><h2>${s.players.length ? `${s.players.length} in the room` : 'Waiting for players…'}</h2>
+      <div class="players">${s.players.map((p) => `<span class="chip" data-key="${p.id}">${p.host ? '🎧 ' : ''}${esc(p.name)}${p.host ? '' : ` <button class="chip small x" data-act="kick" data-pid="${p.id}" title="Remove">✕</button>`}</span>`).join('') || '<span class="muted">Nobody yet. Scan the code!</span>'}</div>
       ${s.error ? `<div class="err" style="margin-bottom:16px">${esc(s.error)}</div>` : ''}
-      <div class="chips"><button class="btn primary big" data-act="start" ${s.players.length ? '' : 'disabled'}>Start game</button>
+      <div class="row"><button class="btn primary big" data-act="start" ${s.players.length ? '' : 'disabled'}>Start game <kbd>Space</kbd></button>
         <button class="btn" data-act="bots">+ Add 3 test players 🤖</button></div>
-      <p class="muted" style="margin-top:18px">${s.settings.qualifiers} qualifying rounds, then a ${s.settings.qualifiers}-song knockout · ${s.settings.autoSeconds ? s.settings.autoSeconds + 's per song' : 'manual reveals'}${s.settings.voteSeconds ? ' · ' + s.settings.voteSeconds + 's voting' : ''}</p>
-    </div></div>`;
+      <p class="note" style="margin-top:16px">${s.settings.qualifiers} rounds · ${s.settings.mode === 'surprise' ? 'random themes' : s.settings.packs.length + ' themes'} · ${s.settings.autoSeconds ? s.settings.autoSeconds + ' sec of music per song' : 'manual reveals'}${s.settings.voteSeconds ? ' · ' + s.settings.voteSeconds + ' sec voting' : ''}</p>
+      <div class="how"><div><b>1 · Listen</b>Songs are revealed one at a time</div><div><b>2 · Vote</b>Pick your favorite on your phone</div><div><b>3 · Survive</b>Winners fight in a knockout</div></div></div></div>`;
 }
 
-function renderLoading() {
-  const l = s.loading || {};
-  return `<div class="loading"><div><div class="spinner"></div><div class="heading"><small>${esc(l.label || '')}</small><h2>${esc(l.question || 'Loading…')}</h2></div></div></div>`;
-}
+const loadingHtml = () => `<div class="loading"><div><div class="spinner"></div><div class="heading"><small>${esc(s.loading?.label || '')}</small><h2>${esc(s.loading?.question || 'Loading…')}</h2></div></div></div>`;
 
-function card(song, i, m) {
-  const res = m.result?.tallies?.[song.id];
-  const win = m.result?.winnerId === song.id;
-  const tied = m.result?.tiedIds?.includes(song.id);
-  const playing = m.nowPlaying === song.id && s.phase !== 'results';
-  const cls = ['card', playing ? 'playing' : '', win ? 'winner' : '', tied ? 'tied' : '', m.result && !win && !tied ? 'dim' : ''].join(' ');
-  const noPrev = !song.hasPreview ? '<span class="badge">no preview</span>' : '';
-  const badge = win ? '<span class="badge crown">👑 WINNER</span>' : tied ? '<span class="badge">TIED</span>' : noPrev;
-  const eq = playing ? '<span class="eq"><i></i><i></i><i></i></span>' : '';
-  const result = res ? `<div class="pct">${res.pct}%</div><div class="bar"><div style="width:${res.pct}%"></div></div>
-      <div class="voters">${res.voters.map((n) => `<span class="chip small">${esc(n)}</span>`).join('')}</div>` : '';
-  const tag = s.phase === 'results' ? 'div' : 'button';
-  return `<${tag} class="${cls}" ${tag === 'button' ? `data-act="replay" data-id="${song.id}" title="Play this song"` : ''} style="animation-delay:${i * 50}ms">
-    ${cover(song)}${badge}<div class="meta"><div class="t">${eq}${esc(song.title)}</div><div class="a">${esc(song.artist)}</div>${result}</div></${tag}>`;
-}
-
-function renderMatch() {
+function introHtml() {
   const m = s.match;
-  const two = m.total === 2;
-  let cards = m.songs.map((x, i) => card(x, i, m)).join('');
-  if (s.phase === 'reveal') for (let i = m.songs.length; i < m.total; i++) cards += `<div class="card"><div class="cover mystery">?</div><div class="meta"><div class="t">&nbsp;</div><div class="a">&nbsp;</div></div></div>`;
-  let controls = '';
+  return `<div class="intro" data-key="intro-${m.token}"><div class="em">${m.emoji}</div><small>${esc(m.label)}</small><h1>${esc(m.question)}</h1>
+    <div><button class="btn" data-act="reveal">Skip ▶</button></div></div>`;
+}
+
+function cardHtml(song, i, m, mode) {
+  const res = m.result?.tallies?.[song.id];
+  const win = m.result?.winnerId === song.id, tied = m.result?.tiedIds?.includes(song.id);
+  const playing = m.nowPlaying === song.id && s.phase !== 'results';
+  const mine = s.hostPlayer?.vote === song.id && s.phase === 'voting';
+  const cls = ['card', s.phase !== 'results' ? 'clickable' : '', playing ? 'playing' : '', win ? 'winner' : '', tied ? 'tied' : '', mine ? 'mine' : '', m.result && !win && !tied ? 'dim' : ''].join(' ');
+  const badge = win ? '<span class="badge crown">👑 WINNER</span>' : tied ? '<span class="badge">TIED</span>' : !song.hasPreview ? '<span class="badge">no preview</span>' : '';
+  const hv = s.phase === 'voting' && s.hostPlayer ? `<button class="hostvote ${mine ? 'on' : ''}" data-act="hostvote" data-id="${song.id}">${mine ? '✓ Your vote' : 'Vote'}</button>` : '';
+  const eq = playing ? '<span class="eq"><i></i><i></i><i></i></span>' : '';
+  const from = song.from && m.kind === 'knockout' ? `<span class="from">👑 ${esc(song.from)}</span>` : '';
+  let result = '';
+  if (res) {
+    const w = animKey === m.token ? res.pct : 0;
+    result = `<div class="res"><div class="pct">${res.pct}%</div><div class="bar"><div data-w="${res.pct}" style="width:${w}%"></div></div>
+      <div class="voters">${res.voters.map((n) => `<span class="chip small">${esc(n)}</span>`).join('')}</div></div>`;
+  }
+  return `<div class="${cls}" data-key="${song.id}" ${s.phase !== 'results' ? `role="button" tabindex="0" data-act="replay" data-id="${song.id}" title="Replay this song"` : ''} style="animation-delay:${i * 60}ms">
+    ${hv}${badge}${cover(song)}<div class="meta"><div class="t">${eq}${esc(song.title)}</div><div class="a">${esc(song.artist)}</div>${from}${result}</div></div>`;
+}
+
+function matchHtml() {
+  const m = s.match, versus = m.total === 2;
+  const cards = m.songs.map((x, i) => cardHtml(x, i, m)).join('');
+  let slots = '';
+  if (s.phase === 'reveal') for (let i = m.songs.length; i < m.total; i++) slots += `<div class="card" data-key="slot-${m.token}-${i}"><div class="cover mystery">?</div><div class="meta"><div class="t">&nbsp;</div><div class="a">&nbsp;</div></div></div>`;
+  const body = versus
+    ? `<div class="versus">${m.songs[0] ? cardHtml(m.songs[0], 0, m) : slots}<div class="vs">VS</div>${m.songs[1] ? cardHtml(m.songs[1], 1, m) : slots}</div>`
+    : `<div class="grid">${cards}${slots}</div>`;
+  const p = primary();
+  const big = (cls = '') => `<button class="btn primary big ${cls}" data-act="${p.act}">${p.label} <kbd>Space</kbd></button>`;
+  let controls = '', bar = '';
   if (s.phase === 'reveal') {
     const last = m.revealed >= m.total;
-    controls = `<button class="btn primary big" data-act="reveal">${last ? 'Open voting 🗳️' : 'Reveal next song ▶'}</button>
-      ${!last ? '<button class="btn" data-act="openVoting">Skip to voting</button>' : ''}
-      <span class="muted">${s.settings.autoSeconds ? 'Auto-reveal on · ' : ''}Click a song to replay it</span>`;
+    if (s.settings.autoSeconds) bar = `<div class="timerbar ${s.paused ? 'paused' : ''}"><i data-next="${m.nextAt || ''}" data-total="${s.settings.autoSeconds * 1000}" style="width:${m.nextAt ? 100 : 0}%"></i></div>`;
+    controls = `${big()}${!last ? '<button class="btn" data-act="openVoting">Skip to voting</button>' : ''}
+      ${s.settings.autoSeconds ? `<button class="btn" data-act="${s.paused ? 'resume' : 'pause'}">${s.paused ? '▶ Resume auto' : '⏸ Pause auto'}</button>` : ''}
+      <span class="note">${s.paused ? 'Paused. ' : ''}Click any song to replay it.</span>`;
   } else if (s.phase === 'voting') {
-    const voted = s.players.filter((p) => p.voted).length;
-    controls = `<div class="votestatus"><span class="count">${voted}/${s.players.length} voted</span>
-      ${s.players.map((p) => `<span class="chip small ${p.voted ? 'voted' : ''}">${p.voted ? '✓ ' : ''}${esc(p.name)}</span>`).join('')}</div>
-      <span class="grow"></span>${m.deadline ? '<span class="timer" id="timer"></span>' : ''}
-      <button class="btn primary big" data-act="closeVoting">Reveal results</button>`;
+    const voted = s.players.filter((x) => x.voted).length, all = voted === s.players.length;
+    controls = `<div class="votestatus"><span class="count">${all ? '✅ Everyone voted!' : `${voted}/${s.players.length} voted`}</span>
+      ${s.players.map((x) => `<span class="chip small ${x.voted ? 'voted' : ''}" data-key="${x.id}">${x.voted ? '✓ ' : ''}${esc(x.name)}</span>`).join('')}</div>
+      <span class="grow"></span>${m.deadline ? `<span class="timer" data-deadline="${m.deadline}">&nbsp;</span>` : ''}${big(all ? 'pulse' : '')}`;
   } else if (s.phase === 'results') {
     const r = m.result;
-    controls = r.tie
-      ? `<span class="count">🤝 It’s a tie!</span><span class="grow"></span><button class="btn primary big" data-act="tiebreak">Tiebreak vote</button>`
-      : `<span class="count">${r.noVotes ? 'Nobody voted, so a song was picked at random.' : ''}</span><span class="grow"></span><button class="btn primary big" data-act="next">${s.progress.n >= s.progress.of ? 'Crown the champion 👑' : 'Next →'}</button>`;
+    const note = r.tie ? `🤝 It’s a tie! ${m.tieCount >= 2 ? 'Tied again. Maybe let fate decide?' : ''}` : r.drawn ? '🎲 Settled by random draw' : r.noVotes ? 'Nobody voted, so a song was picked at random.' : '';
+    const tieBtns = r.tie ? (m.tieCount >= 2 ? `<button class="btn" data-act="tiebreak">Another tiebreak vote</button>` : `<button class="btn" data-act="randomTie">🎲 Random draw</button>`) : '';
+    controls = `<span class="count">${note}</span><span class="grow"></span>${m.nextAt && !r.tie ? `<span class="timer" data-until="${m.nextAt}">&nbsp;</span>` : ''}${tieBtns}${big()}`;
   }
-  return `<div class="stage">
-    <div class="heading"><small>${esc(m.label)}${m.tiebreak ? ' · TIEBREAK' : ''}</small><h2>${esc(m.question)}</h2></div>
-    <div class="grid ${two || m.songs.length === 2 ? 'two' : ''}">${cards}</div>
-    <div class="controls">${controls}</div></div>`;
+  return `<div class="stage"><div class="heading"><small>${esc(m.label)}${m.tiebreak ? ` · TIEBREAK${m.tieCount > 1 ? ' #' + m.tieCount : ''}` : ''}</small><h2>${esc(m.question)}</h2></div>
+    ${bar}${body}<div class="controls">${controls}</div></div>`;
 }
 
-function renderChampion() {
+function championHtml() {
   const c = s.champion, st = s.stats;
   const stat = (t, body) => `<div class="panel stat"><small>${t}</small>${body}</div>`;
   const stats = [
@@ -147,10 +215,10 @@ function renderChampion() {
     st.championFans.length && stat('Champion’s fan club', `<b>${st.championFans.map(esc).join(', ')}</b>voted for the winner in the final`),
   ].filter(Boolean).join('');
   return `<div class="champion"><div class="crown">👑</div><div class="heading"><small>The aux belongs to</small></div>
-    <div class="card winner">${cover(c)}<div class="meta"><div class="t">${esc(c.title)}</div><div class="a">${esc(c.artist)}</div></div></div>
+    <div class="card winner">${cover(c)}<div class="meta"><div class="t" style="font-size:1.6rem">${esc(c.title)}</div><div class="a">${esc(c.artist)}</div></div></div>
     ${stats ? `<div class="stats">${stats}</div>` : ''}
-    <div class="panel path"><h3 class="muted" style="font-size:.85rem;text-transform:uppercase;letter-spacing:.08em">Qualifying winners</h3><ul style="padding:0">${s.path.map((p) => `<li><span>${esc(p.question)}</span><b>${esc(p.title)} · <span class="muted">${esc(p.artist)}</span></b></li>`).join('')}</ul></div>
-    <button class="btn primary big" data-act="again">Play again</button></div>`;
+    <div class="panel path"><h3 class="muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Qualifying winners</h3><ul style="padding:0">${s.path.map((p) => `<li><span>${esc(p.question)}</span><b>${esc(p.title)} · <span class="muted">${esc(p.artist)}</span></b></li>`).join('')}</ul></div>
+    <button class="btn primary big" data-act="again">Play again <kbd>Space</kbd></button></div>`;
 }
 
 function confetti() {
@@ -164,49 +232,73 @@ function confetti() {
   setTimeout(() => (el.innerHTML = ''), 8000);
 }
 
-// ---------- events ----------
-app.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-act]');
-  if (!t) return;
-  const d = t.dataset;
-  switch (d.act) {
-    case 'set': form[d.key] = Number(d.val); renderSetup(); break;
-    case 'pack': {
-      const i = form.packs.indexOf(d.id);
-      if (i >= 0) form.packs.splice(i, 1); else form.packs.push(d.id);
-      renderSetup(); break;
-    }
+// ---------- actions ----------
+async function perform(act, d = {}) {
+  switch (act) {
+    case 'set': form[d.setting] = d.setting === 'mode' ? d.val : Number(d.val); return render();
+    case 'toggle': form[d.setting] = !form[d.setting]; return render();
+    case 'more': form.more = !form.more; return render();
+    case 'allpacks': form.packs = meta.packs.map((p) => p.id); return render();
+    case 'nopacks': form.packs = []; return render();
+    case 'pack': { const i = form.packs.indexOf(d.id); if (i >= 0) form.packs.splice(i, 1); else form.packs.push(d.id); return render(); }
     case 'create':
       try {
         const r = await api('/api/create', form);
-        session = { code: r.code, key: r.key };
+        session = { code: r.code, key: r.key, hostPid: r.hostPid };
         localStorage.setItem('aux-host', JSON.stringify(session));
-        err = ''; open();
-      } catch (x) { err = x.message; renderSetup(); }
-      break;
-    case 'start': audio.src = ''; audio.play().catch(() => {}); call('start'); break; // user gesture unlocks audio
-    case 'bots': call('addBots', { count: 3 }); break;
-    case 'kick': call('kick', { pid: d.pid }); break;
-    case 'reveal': case 'openVoting': case 'closeVoting': case 'tiebreak': case 'next': call(d.act); break;
-    case 'replay': audio.play().catch(() => {}); call('replay', { songId: d.id }); break;
-    case 'unmute': blocked = false; lastPlayKey = ''; syncAudio(); render(); break;
-    case 'again': localStorage.removeItem('aux-host'); await call('reset'); break;
+        err = ''; notice = ''; open();
+      } catch (x) { err = x.message; render(); }
+      return;
+    case 'start': audio.play().catch(() => {}); return call('start'); // the click unlocks audio
+    case 'bots': return call('addBots', { count: 3 });
+    case 'kick': return call('kick', { pid: d.pid });
+    case 'copy': try { await navigator.clipboard.writeText(joinUrl()); notice = ''; err = ''; } catch { /* ignore */ } return;
+    case 'reveal': case 'openVoting': case 'closeVoting': case 'tiebreak': case 'randomTie': case 'next': case 'pause': case 'resume': return call(act);
+    case 'replay': audio.play().catch(() => {}); return call('replay', { songId: d.id });
+    case 'hostvote':
+      return api('/api/vote', { code: session.code, pid: session.hostPid, token: s.match.token, songId: d.id }).catch((e) => { err = e.message; render(); });
+    case 'unmute': blocked = false; lastPlayKey = ''; syncAudio(); return render();
+    case 'again': return call('reset'); // back to the lobby with the same room and players
   }
+}
+
+
+app.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-act]');
+  if (!t || t.disabled) return;
+  if (t.dataset.act === 'replay' && e.target.closest('[data-act=hostvote]')) return;
+  perform(t.dataset.act, t.dataset);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === ' ' || e.key === 'Enter') {
+    if (e.target.closest('[data-act]') && e.key === 'Enter') return; // let a focused button handle its own Enter
+    const p = primary(); if (!p) return;
+    e.preventDefault(); perform(p.act);
+  } else if (e.key === 'p' && s?.phase === 'reveal' && s.settings.autoSeconds) perform(s.paused ? 'resume' : 'pause');
+  else if (e.key === 'm') toggleMute();
 });
 
 function open() {
   es?.close();
   es = connect(`/api/events?role=host&code=${session.code}&key=${session.key}`, (st) => {
-    const prevPhase = s?.phase;
+    const prev = s?.phase;
     s = st; render(); syncAudio();
-    if (st.phase === 'champion' && prevPhase !== 'champion') confetti();
-  }, () => { localStorage.removeItem('aux-host'); session = null; s = null; es?.close(); render(); }, session.code);
+    if (st.phase === 'champion' && prev !== 'champion') confetti();
+  }, () => {
+    localStorage.removeItem('aux-host'); session = null; s = null; es?.close();
+    notice = 'That game has ended or the server restarted. Start a new one!'; render();
+  }, session.code);
 }
 
+// live countdowns without re-rendering the page
 setInterval(() => {
-  const el = $('#timer');
-  if (el && s?.match?.deadline) el.textContent = `${Math.max(0, Math.ceil((s.match.deadline - Date.now()) / 1000))}s`;
-}, 250);
+  const now = Date.now();
+  const bar = document.querySelector('.timerbar > i');
+  if (bar) { const nx = Number(bar.dataset.next), tot = Number(bar.dataset.total); if (nx) bar.style.width = `${Math.max(0, Math.min(100, ((nx - now) / tot) * 100))}%`; }
+  const t1 = document.querySelector('[data-deadline]'); if (t1) t1.textContent = `${Math.max(0, Math.ceil((Number(t1.dataset.deadline) - now) / 1000))}s`;
+  const t2 = document.querySelector('[data-until]'); if (t2) t2.textContent = `Next in ${Math.max(0, Math.ceil((Number(t2.dataset.until) - now) / 1000))}s`;
+}, 200);
 
 (async () => {
   [info, meta] = await Promise.all([api('/api/info'), api('/api/packs')]);

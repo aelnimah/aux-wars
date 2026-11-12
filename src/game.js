@@ -7,7 +7,7 @@
 // the game; one changeable vote per player; stale votes (old round / old tiebreak) are rejected.
 
 import crypto from 'node:crypto';
-import { PACKS, packById, DEFAULT_PACKS } from './packs.js';
+import { packById, FIXED_PACKS, ALL_PACKS, hueOf } from './packs.js';
 import { music as defaultMusic } from './music.js';
 
 export class GameError extends Error {}
@@ -20,7 +20,7 @@ const ROOM_TTL_MS = 24 * 3600 * 1000;
 const MAX_PLAYERS = 24;
 
 export const rooms = new Map();
-export const config = { music: defaultMusic, botDelay: [1200, 4500] }; // tests override
+export const config = { music: defaultMusic, botDelay: [1200, 4500], introMs: 3800 }; // tests override
 
 export const shuffle = (arr, rng = Math.random) => {
   const a = [...arr];
@@ -42,17 +42,22 @@ export function createRoom(input = {}) {
   if (![0, 8, 12, 20].includes(auto)) fail('Bad reveal speed.');
   const vote = Number(input.voteSeconds ?? 0);
   if (![0, 30, 60].includes(vote)) fail('Bad vote timer.');
-  const packs = (Array.isArray(input.packs) && input.packs.length ? input.packs : DEFAULT_PACKS).filter(packById);
+  const autoNext = Number(input.autoNext ?? 0);
+  if (![0, 6, 10].includes(autoNext)) fail('Bad auto-continue setting.');
+  const mode = input.mode === 'custom' ? 'custom' : 'surprise';
+  const picked = (Array.isArray(input.packs) ? input.packs : []).filter(packById);
+  const packs = mode === 'surprise' ? ALL_PACKS : picked.length ? picked : FIXED_PACKS;
   if (!packs.length) fail('Pick at least one theme.');
 
   let code;
   do { code = Array.from({ length: 6 }, () => CODE_CHARS[crypto.randomInt(CODE_CHARS.length)]).join(''); } while (rooms.has(code));
   const room = {
     code, hostKey: crypto.randomBytes(16).toString('hex'), createdAt: Date.now(),
-    settings: { qualifiers: q, autoSeconds: auto, voteSeconds: vote, packs },
-    players: new Map(), notify: null, timers: { reveal: null, vote: null, bots: [] },
+    settings: { qualifiers: q, autoSeconds: auto, voteSeconds: vote, autoNext, mode, packs, hostPlays: !!input.hostPlays },
+    players: new Map(), notify: null, timers: { reveal: null, vote: null, next: null, bots: [] },
   };
   resetGame(room);
+  if (room.settings.hostPlays) room.hostPid = addPlayer(room, 'Host', { host: true }).id;
   rooms.set(code, room);
   return room;
 }
@@ -72,6 +77,7 @@ export function resetGame(room) {
   room.loading = null;
   room.champion = null;
   room.error = null;
+  room.paused = false;
 }
 
 export function sweepRooms(now = Date.now()) {
@@ -79,20 +85,20 @@ export function sweepRooms(now = Date.now()) {
 }
 
 function clearTimers(room) {
-  clearTimeout(room.timers.reveal); clearTimeout(room.timers.vote);
+  clearTimeout(room.timers.reveal); clearTimeout(room.timers.vote); clearTimeout(room.timers.next);
   room.timers.bots.forEach(clearTimeout);
-  room.timers = { reveal: null, vote: null, bots: [] };
+  room.timers = { reveal: null, vote: null, next: null, bots: [] };
 }
 const emit = (room) => room.notify?.();
 
-export function addPlayer(room, rawName, { bot = false } = {}) {
+export function addPlayer(room, rawName, { bot = false, host = false } = {}) {
   if (room.players.size >= MAX_PLAYERS) fail('This room is full.');
   let name = String(rawName ?? '').replace(/\s+/g, ' ').trim().slice(0, 16);
   if (!name) fail('Pick a nickname.');
   const taken = new Set([...room.players.values()].map((p) => p.name.toLowerCase()));
   let n = name, i = 2;
   while (taken.has(n.toLowerCase())) n = `${name.slice(0, 13)} ${i++}`;
-  const p = { id: rid(), name: n, bot, joinedAt: Date.now() };
+  const p = { id: rid(), name: n, bot, host, joinedAt: Date.now() };
   room.players.set(p.id, p);
   emit(room);
   return p;
@@ -112,12 +118,27 @@ async function planGame(room) {
   const pools = [];
   for (const id of packs) {
     const pack = packById(id);
+    if (pack.spotlight) {
+      // a few random chart artists, each its own "Best <artist> song?" round
+      const artists = shuffle(await config.music.chartArtists()).slice(0, 12);
+      let made = 0;
+      for (const a of artists) {
+        if (made >= 3) break;
+        const tracks = await config.music.artistTop(a);
+        if (tracks.length >= ROUND_SIZE) {
+          pools.push({ pack: { id: `spot-${a.id}`, emoji: '🎯', question: `Best ${a.name} song?` }, specs: shuffle(tracks) });
+          made++;
+        }
+      }
+      continue;
+    }
     let specs;
     if (pack.chart !== undefined) {
       specs = (await config.music.chartTracks(pack.chart)).map((s) => ({ ...s }));
     } else specs = pack.songs.map(([artist, title]) => ({ artist, title }));
     if (specs.length >= 4) pools.push({ pack, specs: shuffle(specs) });
   }
+  if (!pools.length) fail('No songs available. Check your connection or pick other themes.');
   const used = new Set();
   const take = (pool, n) => {
     const out = [];
@@ -129,10 +150,13 @@ async function planGame(room) {
     return out;
   };
   const order = shuffle(pools);
+  // Make sure a spotlight round shows up if one is available and the game is long enough.
+  const spot = order.findIndex((pl) => pl.pack.id.startsWith('spot-'));
+  if (spot >= q && q >= 8) { const at = Math.floor(Math.random() * q); [order[at], order[spot]] = [order[spot], order[at]]; }
   const plan = [];
   for (let i = 0; i < q; i++) {
     const pool = order[i % order.length];
-    let specs = take(pool, ROUND_SIZE);
+    const specs = take(pool, ROUND_SIZE);
     // top up from the fullest other pools if this theme ran dry
     while (specs.length < ROUND_SIZE) {
       const other = [...order].sort((a, b) => b.specs.length - a.specs.length)[0];
@@ -153,7 +177,7 @@ async function resolveRound(room, i) {
     while (queue.length) {
       const idx = queue.shift();
       const spec = specs[idx];
-      const r = spec.resolved || (await config.music.resolveTrack(spec.artist, spec.title));
+      const r = spec.resolved || (await config.music.resolveTrack(spec.artist, spec.title)) || (await config.music.resolveTrack(spec.artist, spec.title));
       if (r) { songs[idx].cover = r.cover || null; songs[idx].preview = r.preview || null; }
     }
   };
@@ -167,7 +191,7 @@ const roundSongs = (room, i) => (room.roundPromises[i] ||= resolveRound(room, i)
 function newMatch(room, fields) {
   return {
     seq: ++room.seq, vseq: 1, revealed: 0, candidates: null, votes: {}, result: null,
-    nowPlaying: null, playNonce: 0, deadline: null, ...fields,
+    nowPlaying: null, playNonce: 0, deadline: null, nextAt: null, emoji: '🎵', hue: 330, ...fields,
   };
 }
 
@@ -184,8 +208,9 @@ async function beginQualifying(room) {
   emit(room);
   const songs = await roundSongs(room, i);
   if (room.gameId !== gid) return;
-  room.match = newMatch(room, { kind: 'qualifying', label: `Round ${i + 1} of ${room.settings.qualifiers}`, question: room.plan[i].question, songs });
-  startReveal(room);
+  const pack = room.plan[i].pack;
+  room.match = newMatch(room, { kind: 'qualifying', label: `Round ${i + 1} of ${room.settings.qualifiers}`, question: pack.question, emoji: pack.emoji, hue: hueOf(pack.id), songs });
+  startIntro(room);
   if (i + 1 < room.plan.length) roundSongs(room, i + 1).catch(() => {});
 }
 
@@ -193,10 +218,10 @@ function beginKnockout(room) {
   const ko = room.ko;
   const a = ko.current[ko.idx * 2], b = ko.current[ko.idx * 2 + 1];
   room.match = newMatch(room, {
-    kind: 'knockout', label: koLabel(ko.current.length),
+    kind: 'knockout', label: koLabel(ko.current.length), emoji: '⚔️', hue: 350,
     question: `Match ${ko.idx + 1} of ${ko.current.length / 2}`, songs: [a, b],
   });
-  startReveal(room);
+  startIntro(room);
 }
 
 function startKnockout(room) {
@@ -211,33 +236,55 @@ function startKnockout(room) {
   beginKnockout(room);
 }
 
-function startReveal(room) {
-  room.phase = 'reveal';
+// A short splash showing the round's question before the first song plays.
+function startIntro(room) {
   room.loading = null;
+  room.paused = false;
+  if (!config.introMs) return startReveal(room);
+  room.phase = 'intro';
+  const gid = room.gameId, seq = room.match.seq;
+  clearTimeout(room.timers.reveal);
+  room.timers.reveal = setTimeout(() => {
+    if (room.gameId === gid && room.match?.seq === seq && room.phase === 'intro') startReveal(room);
+  }, config.introMs);
+  emit(room);
+}
+
+function startReveal(room) {
+  clearTimeout(room.timers.reveal);
+  room.phase = 'reveal';
   revealNext(room);
+}
+
+// After each reveal, wait one listening window, then show the next song (or open voting).
+function scheduleStep(room) {
+  const m = room.match;
+  clearTimeout(room.timers.reveal);
+  m.nextAt = null;
+  const secs = room.settings.autoSeconds;
+  if (!(secs > 0) || room.paused) return;
+  const gid = room.gameId, seq = m.seq;
+  m.nextAt = Date.now() + secs * 1000;
+  room.timers.reveal = setTimeout(() => {
+    if (room.gameId !== gid || room.match?.seq !== seq || room.phase !== 'reveal' || room.paused) return;
+    if (m.revealed < m.songs.length) revealNext(room); else openVoting(room);
+  }, secs * 1000);
 }
 
 function revealNext(room) {
   const m = room.match;
   if (room.phase !== 'reveal' || m.revealed >= m.songs.length) return;
-  clearTimeout(room.timers.reveal);
   m.revealed++;
   m.nowPlaying = m.songs[m.revealed - 1].id;
   m.playNonce++;
-  const secs = room.settings.autoSeconds;
-  if (secs > 0) {
-    const gid = room.gameId, seq = m.seq;
-    room.timers.reveal = setTimeout(() => {
-      if (room.gameId !== gid || room.match?.seq !== seq || room.phase !== 'reveal') return;
-      if (m.revealed < m.songs.length) revealNext(room); else openVoting(room);
-    }, secs * 1000);
-  }
+  scheduleStep(room);
   emit(room);
 }
 
 function openVoting(room) {
   const m = room.match;
   clearTimeout(room.timers.reveal);
+  m.nextAt = null;
   room.phase = 'voting';
   m.revealed = m.songs.length;
   m.nowPlaying = null;
@@ -304,12 +351,29 @@ function closeVoting(room) {
   m.result = { tallies, total, tie, tiedIds: tie ? winners : null, winnerId: tie ? null : winners[0], noVotes };
   m.deadline = null;
   room.phase = 'results';
+  scheduleNext(room);
   emit(room);
+}
+
+// Optional: continue on its own a few seconds after a decided result.
+function scheduleNext(room) {
+  const m = room.match;
+  clearTimeout(room.timers.next);
+  m.nextAt = null;
+  const secs = room.settings.autoNext;
+  if (!secs || m.result.tie) return;
+  const gid = room.gameId, seq = m.seq;
+  m.nextAt = Date.now() + secs * 1000;
+  room.timers.next = setTimeout(() => {
+    if (room.gameId === gid && room.match?.seq === seq && room.phase === 'results' && !room.match.result.tie) advance(room);
+  }, secs * 1000);
 }
 
 function advance(room) {
   const m = room.match;
+  clearTimeout(room.timers.next);
   const winner = m.songs.find((s) => s.id === m.result.winnerId);
+  if (m.kind === 'qualifying') winner.from = m.question; // shown on knockout cards
   const pct = m.result.tallies[winner.id].pct;
   room.history.push({
     kind: m.kind, label: m.label, question: m.question,
@@ -347,6 +411,7 @@ export async function hostAction(room, action, args = {}) {
       return;
     case 'kick':
       if (room.phase !== 'lobby') fail('You can only remove players in the lobby.');
+      if (args.pid === room.hostPid) fail('That is you!');
       room.players.delete(args.pid); emit(room); return;
     case 'start': {
       if (room.phase !== 'lobby') fail('Game already started.');
@@ -370,11 +435,25 @@ export async function hostAction(room, action, args = {}) {
       return;
     }
     case 'reveal':
+      if (room.phase === 'intro') return startReveal(room); // skip the splash
       if (room.phase !== 'reveal') fail('Not revealing right now.');
       if (m.revealed < m.songs.length) revealNext(room); else openVoting(room);
       return;
+    case 'pause':
+      if (room.phase !== 'reveal') fail('Nothing to pause.');
+      room.paused = true; scheduleStep(room); emit(room); return;
+    case 'resume':
+      if (room.phase !== 'reveal') fail('Nothing to resume.');
+      room.paused = false; scheduleStep(room); emit(room); return;
+    case 'randomTie': {
+      if (room.phase !== 'results' || !m.result.tie) fail('There is no tie to break.');
+      const ids = m.result.tiedIds;
+      m.result.winnerId = ids[Math.floor(Math.random() * ids.length)];
+      m.result.tie = false; m.result.tiedIds = null; m.result.drawn = true;
+      scheduleNext(room); emit(room); return;
+    }
     case 'openVoting':
-      if (room.phase !== 'reveal') fail('Voting can only open after a reveal.');
+      if (room.phase !== 'reveal' && room.phase !== 'intro') fail('Voting can only open after a reveal.');
       return openVoting(room);
     case 'closeVoting':
       if (room.phase !== 'voting') fail('Voting is not open.');
@@ -427,26 +506,29 @@ export function computeStats(room) {
 
 // ---------- views (what each client is allowed to see) ----------
 
-const songView = (s, host) => ({ id: s.id, title: s.title, artist: s.artist, cover: s.cover, ...(host ? { preview: s.preview } : {}), hasPreview: !!s.preview });
+const songView = (s, host) => ({ id: s.id, title: s.title, artist: s.artist, cover: s.cover, from: s.from || null, ...(host ? { preview: s.preview } : {}), hasPreview: !!s.preview });
 
 export function viewFor(room, role, pid) {
   const host = role === 'host';
   const m = room.match;
   const v = {
     code: room.code, phase: room.phase, settings: room.settings, error: room.error, loading: room.loading,
-    players: [...room.players.values()].map((p) => ({ id: p.id, name: p.name, bot: p.bot, voted: room.phase === 'voting' && !!m?.votes[p.id] })),
+    paused: room.paused,
+    players: [...room.players.values()].map((p) => ({ id: p.id, name: p.name, bot: p.bot, host: p.host, voted: room.phase === 'voting' && !!m?.votes[p.id] })),
     progress: room.phase === 'lobby' ? null : { n: Math.min(matchNumber(room), totalMatches(room.settings.qualifiers)), of: totalMatches(room.settings.qualifiers) },
   };
+  if (host && room.hostPid) v.hostPlayer = { id: room.hostPid, vote: m?.votes[room.hostPid] ?? null };
   if (!host) {
     const me = room.players.get(pid);
     v.me = me ? { id: me.id, name: me.name, vote: m?.votes[pid] ?? null } : null;
   }
-  if (m && ['reveal', 'voting', 'results', 'champion'].includes(room.phase)) {
+  if (m && ['intro', 'reveal', 'voting', 'results', 'champion'].includes(room.phase)) {
     let songs;
-    if (room.phase === 'reveal') songs = m.songs.slice(0, m.revealed);
+    if (room.phase === 'intro') songs = [];
+    else if (room.phase === 'reveal') songs = m.songs.slice(0, m.revealed);
     else songs = m.candidates ? m.songs.filter((s) => m.candidates.includes(s.id)) : m.songs;
     v.match = {
-      kind: m.kind, label: m.label, question: m.question, token: `${m.seq}.${m.vseq}`, tiebreak: m.vseq > 1,
+      kind: m.kind, label: m.label, question: m.question, emoji: m.emoji, hue: m.hue, token: `${m.seq}.${m.vseq}`, tiebreak: m.vseq > 1, tieCount: m.vseq - 1, nextAt: m.nextAt,
       total: m.songs.length, revealed: m.revealed, songs: songs.map((s) => songView(s, host)),
       nowPlaying: m.nowPlaying, playNonce: m.playNonce, deadline: m.deadline,
     };

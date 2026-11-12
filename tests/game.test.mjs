@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 import { config, createRoom, addPlayer, addBots, hostAction, castVote, viewFor, rooms, totalMatches, resetGame } from '../src/game.js';
 
 config.botDelay = [0, 5];
+config.introMs = 0;
 config.music = {
   async resolveTrack(artist, title) { return { preview: `https://x/${title}.mp3`, cover: `https://x/${title}.jpg` }; },
   async chartTracks() { return []; },
+  async chartArtists() { return [{ id: 1, name: 'Fake Artist' }, { id: 2, name: 'Other Act' }]; },
+  async artistTop(a) { return Array.from({ length: 12 }, (_, i) => ({ artist: a.name, title: `${a.name} hit ${i}`, resolved: { preview: 'https://x/p.mp3', cover: null } })); },
 };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const until = async (fn, ms = 3000) => { const t = Date.now(); while (!fn()) { if (Date.now() - t > ms) throw new Error('timeout'); await wait(5); } };
@@ -87,7 +90,7 @@ test('auto reveal advances and opens voting; vote timer closes it', async () => 
 });
 
 test('too few songs gives a friendly error and returns to lobby', async () => {
-  const room = createRoom({ qualifiers: 16, packs: ['pregame'] });
+  const room = createRoom({ qualifiers: 16, mode: 'custom', packs: ['pregame'] });
   addPlayer(room, 'Ana');
   await hostAction(room, 'start');
   assert.equal(room.phase, 'lobby');
@@ -101,6 +104,72 @@ test('reset returns to lobby and keeps players', async () => {
   await hostAction(room, 'reset');
   assert.equal(room.phase, 'lobby');
   assert.equal(room.players.size, 1);
+});
+
+test('intro splash shows the question before songs, and can be skipped', async () => {
+  config.introMs = 60000;
+  try {
+    const room = createRoom({ qualifiers: 4, autoSeconds: 0 });
+    addPlayer(room, 'Ana');
+    await hostAction(room, 'start');
+    assert.equal(room.phase, 'intro');
+    const v = viewFor(room, 'player', [...room.players.keys()][0]);
+    assert.equal(v.match.songs.length, 0);
+    assert.ok(v.match.question);
+    await hostAction(room, 'reveal');
+    assert.equal(room.phase, 'reveal');
+    assert.equal(room.match.revealed, 1);
+    resetGame(room);
+  } finally { config.introMs = 0; }
+});
+
+test('pause stops auto-reveal, resume restarts it', async () => {
+  const room = createRoom({ qualifiers: 4, autoSeconds: 8 });
+  addPlayer(room, 'Ana');
+  await hostAction(room, 'start');
+  assert.ok(room.match.nextAt);
+  await hostAction(room, 'pause');
+  assert.equal(room.match.nextAt, null);
+  assert.equal(viewFor(room, 'host').paused, true);
+  await hostAction(room, 'resume');
+  assert.ok(room.match.nextAt);
+  resetGame(room);
+});
+
+test('random draw settles a tie; auto-continue advances', async () => {
+  const room = createRoom({ qualifiers: 4, autoSeconds: 0, autoNext: 6 });
+  const p = addPlayer(room, 'Ana'); const q = addPlayer(room, 'Ben');
+  await hostAction(room, 'start');
+  await hostAction(room, 'openVoting');
+  const token = viewFor(room, 'player', p.id).match.token;
+  const [a, b] = room.match.songs;
+  castVote(room, p.id, token, a.id); castVote(room, q.id, token, b.id);
+  await hostAction(room, 'closeVoting');
+  assert.equal(room.match.result.tie, true);
+  assert.equal(room.match.nextAt, null, 'no auto-continue during a tie');
+  await hostAction(room, 'randomTie');
+  assert.equal(room.match.result.tie, false);
+  assert.ok([a.id, b.id].includes(room.match.result.winnerId));
+  assert.ok(room.match.nextAt, 'auto-continue scheduled once decided');
+  await assert.rejects(hostAction(room, 'bogus'), /Unknown action/);
+  resetGame(room);
+});
+
+test('host can play too; Surprise mode mixes every theme incl. spotlight', async () => {
+  const room = createRoom({ qualifiers: 16, autoSeconds: 0, hostPlays: true });
+  assert.ok(room.hostPid);
+  assert.equal(room.settings.mode, 'surprise');
+  assert.ok(room.settings.packs.length > 25);
+  await hostAction(room, 'start');
+  const questions = room.plan.map((r) => r.question);
+  assert.ok(new Set(questions).size >= 14, 'themes rarely repeat: ' + questions.join(' | '));
+  assert.ok(questions.some((x) => /^Best (Fake Artist|Other Act) song\?$/.test(x)), 'spotlight rounds appear');
+  await hostAction(room, 'openVoting');
+  const token = viewFor(room, 'host').match.token;
+  castVote(room, room.hostPid, token, room.match.songs[0].id);
+  assert.equal(viewFor(room, 'host').hostPlayer.vote, room.match.songs[0].id);
+  await assert.rejects(hostAction(room, 'kick', { pid: room.hostPid }), /That is you/).catch(() => {});
+  resetGame(room);
 });
 
 test.after(() => rooms.clear());
