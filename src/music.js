@@ -76,9 +76,11 @@ export const music = {
     const hit = cache.get('chart-artists');
     if (hit && Date.now() - hit.at < 3600_000) return hit.list;
     try {
-      const j = await getJson('https://api.deezer.com/chart/0/artists?limit=60');
-      const list = (j.data || []).map((a) => ({ id: a.id, name: a.name }));
-      cache.set('chart-artists', { at: Date.now(), list });
+      // rap, pop and R&B charts so spotlight rounds stay in the lane
+      const lists = await Promise.all([116, 132, 165].map((g) => getJson(`https://api.deezer.com/chart/${g}/artists?limit=40`).catch(() => ({ data: [] }))));
+      const seen = new Set(), list = [];
+      for (const j of lists) for (const a of j.data || []) if (!seen.has(a.id)) { seen.add(a.id); list.push({ id: a.id, name: a.name }); }
+      if (list.length) cache.set('chart-artists', { at: Date.now(), list });
       return list;
     } catch {
       return [];

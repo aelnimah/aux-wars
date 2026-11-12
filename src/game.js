@@ -20,7 +20,7 @@ const ROOM_TTL_MS = 24 * 3600 * 1000;
 const MAX_PLAYERS = 24;
 
 export const rooms = new Map();
-export const config = { music: defaultMusic, botDelay: [1200, 4500], introMs: 3800 }; // tests override
+export const config = { music: defaultMusic, botDelay: [1200, 4500], introMs: 2500 }; // tests override
 
 export const shuffle = (arr, rng = Math.random) => {
   const a = [...arr];

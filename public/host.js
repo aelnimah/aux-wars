@@ -59,6 +59,9 @@ function estimate() {
 }
 const joinUrl = (base = info.urls[0] || location.origin) => `${base}/join?room=${s.code}`;
 
+// Small groups tie constantly, so after one tiebreak (or a big tie in a small room) a random draw is the sensible default.
+const preferDraw = (m) => m.tieCount >= 1 || (m.result.tiedIds.length >= 3 && s.players.length <= 4);
+
 // What the big button (and Space/Enter) does right now.
 function primary() {
   if (!s) return null;
@@ -69,7 +72,7 @@ function primary() {
     case 'reveal': return m.revealed >= m.total ? { act: 'reveal', label: 'Open voting 🗳️' } : { act: 'reveal', label: 'Reveal next song ▶' };
     case 'voting': return { act: 'closeVoting', label: 'Reveal results' };
     case 'results':
-      if (m.result.tie) return m.tieCount >= 2 ? { act: 'randomTie', label: '🎲 Random draw' } : { act: 'tiebreak', label: 'Tiebreak vote' };
+      if (m.result.tie) return preferDraw(m) ? { act: 'randomTie', label: '🎲 Random draw' } : { act: 'tiebreak', label: 'Tiebreak vote' };
       return { act: 'next', label: s.progress.n >= s.progress.of ? 'Crown the champion 👑' : 'Next →' };
     case 'champion': return { act: 'again', label: 'Play again' };
   }
@@ -113,7 +116,7 @@ function setupHtml() {
     <div class="sec"><h3>How long?</h3><div class="row">${len(4, 'Quick', 'short and sweet')}${len(8, 'Classic', 'the full experience')}${len(16, 'Marathon', 'serious aux energy')}</div>
       <p class="est" style="margin-top:12px">Roughly <b>${estimate()} minutes</b> with these settings.</p></div>
     <div class="sec"><h3>What are we voting on?</h3><div class="row">
-      <button class="opt-card ${form.mode === 'surprise' ? 'on' : ''}" data-act="set" data-setting="mode" data-val="surprise"><b>🎲 Surprise me</b><small>Every round gets a random theme: pregame, breakup songs, 80s, a random artist’s best… nobody picks.</small></button>
+      <button class="opt-card ${form.mode === 'surprise' ? 'on' : ''}" data-act="set" data-setting="mode" data-val="surprise"><b>🎲 Surprise me</b><small>Every round gets a random theme: pregame, breakup songs, Afrobeats, a random artist’s best… nobody picks.</small></button>
       <button class="opt-card ${form.mode === 'custom' ? 'on' : ''}" data-act="set" data-setting="mode" data-val="custom"><b>🎛️ I’ll choose</b><small>Pick exactly which themes can show up.</small></button></div></div>
     ${form.mode === 'custom' ? `<div class="sec"><h3>Themes · ${form.packs.length} picked <button class="chip small" data-act="allpacks">all</button> <button class="chip small" data-act="nopacks">none</button></h3>
       <div class="row">${meta.packs.map((p) => `<button class="pack ${on(p.id) ? 'on' : ''}" data-key="${p.id}" data-act="pack" data-id="${p.id}"><b>${p.emoji} ${esc(p.name)}${p.live ? ' · live' : ''}</b><small>${esc(p.desc)}</small></button>`).join('')}</div>
@@ -198,8 +201,8 @@ function matchHtml() {
       <span class="grow"></span>${m.deadline ? `<span class="timer" data-deadline="${m.deadline}">&nbsp;</span>` : ''}${big(all ? 'pulse' : '')}`;
   } else if (s.phase === 'results') {
     const r = m.result;
-    const note = r.tie ? `🤝 It’s a tie! ${m.tieCount >= 2 ? 'Tied again. Maybe let fate decide?' : ''}` : r.drawn ? '🎲 Settled by random draw' : r.noVotes ? 'Nobody voted, so a song was picked at random.' : '';
-    const tieBtns = r.tie ? (m.tieCount >= 2 ? `<button class="btn" data-act="tiebreak">Another tiebreak vote</button>` : `<button class="btn" data-act="randomTie">🎲 Random draw</button>`) : '';
+    const note = r.tie ? `🤝 It’s a tie! ${preferDraw(m) ? 'Let fate decide?' : ''}` : r.drawn ? '🎲 Settled by random draw' : r.noVotes ? 'Nobody voted, so a song was picked at random.' : '';
+    const tieBtns = r.tie ? (preferDraw(m) ? `<button class="btn" data-act="tiebreak">Another tiebreak vote</button>` : `<button class="btn" data-act="randomTie">🎲 Random draw</button>`) : '';
     controls = `<span class="count">${note}</span><span class="grow"></span>${m.nextAt && !r.tie ? `<span class="timer" data-until="${m.nextAt}">&nbsp;</span>` : ''}${tieBtns}${big()}`;
   }
   return `<div class="stage"><div class="heading"><small>${esc(m.label)}${m.tiebreak ? ` · TIEBREAK${m.tieCount > 1 ? ' #' + m.tieCount : ''}` : ''}</small><h2>${esc(m.question)}</h2></div>

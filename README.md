@@ -35,7 +35,7 @@ Host keys: **Space** = the big button, **P** = pause/resume auto-reveal, **M** =
 
 ## Where the songs come from
 
-- **Themes** (`src/packs.js`) are 27 curated lists with a question each (pregame, breakup, 80s, country, Latin, karaoke...). Add your own: it's one line per song (`Artist - Title`).
+- **Themes** (`src/packs.js`) are 23 curated lists with a question each, all hip-hop, R&B, pop, Afrobeats, dancehall and Latin (pregame, breakup, slow jams, Afrobeats, UK rap, trap...). Add your own: it's one line per song (`Artist - Title`).
 - **Surprise me** mixes all themes at random, so every game is different and themes don't repeat.
 - **Artist Spotlight** picks random artists from the live charts: "Best <artist> song?".
 - **Live charts** pull Deezer's current top tracks per genre, so those rounds are different every time.
