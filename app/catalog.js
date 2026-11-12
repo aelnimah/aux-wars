@@ -1,0 +1,20 @@
+const packs = {
+ 'Drake': 'Headlines|Over|Best I Ever Had|Find Your Love|Take Care|Marvins Room|The Motto|Started From the Bottom|Hold On, We’re Going Home|Worst Behavior|Energy|Know Yourself|Hotline Bling|One Dance|Controlla|Passionfruit|Nice for What|God’s Plan|Nonstop|In My Feelings|Laugh Now Cry Later|Jimmy Cooks|Rich Flex|Search & Rescue',
+ 'Kanye West': 'Through the Wire|All Falls Down|Jesus Walks|Slow Jamz|Spaceship|Gold Digger|Touch the Sky|Heard ’Em Say|Diamonds from Sierra Leone|Stronger|Good Life|Flashing Lights|Can’t Tell Me Nothing|Homecoming|Heartless|Love Lockdown|Power|All of the Lights|Runaway|Devil in a New Dress|Black Skinhead|Bound 2|Ultralight Beam|Father Stretch My Hands Pt. 1',
+ '50 Cent': 'In Da Club|Many Men|P.I.M.P.|21 Questions|If I Can’t|What Up Gangsta|Patiently Waiting|Heat|Wanksta|Disco Inferno|Candy Shop|Just a Lil Bit|Outta Control|Hate It or Love It|I Get Money|Ayo Technology',
+ 'Kendrick Lamar': 'A.D.H.D|HiiiPoWeR|Bitch, Don’t Kill My Vibe|Backseat Freestyle|Money Trees|Swimming Pools|Poetic Justice|m.A.A.d city|King Kunta|Alright|These Walls|HUMBLE.|DNA.|LOVE.|LOYALTY.|N95|Die Hard|Rich Spirit|Not Like Us|euphoria',
+ 'J. Cole': 'Work Out|Nobody’s Perfect|Power Trip|Crooked Smile|She Knows|Wet Dreamz|No Role Modelz|Love Yourz|Apparently|G.O.M.D.|Deja Vu|Neighbors|ATM|Kevin’s Heart|MIDDLE CHILD|a m a r i',
+ 'Travis Scott': 'Antidote|90210|3500|Oh My Dis Side|Goosebumps|Pick Up the Phone|Through the Late Night|Butterfly Effect|Stargazing|Sicko Mode|Stop Trying to Be God|Yosemite|Can’t Say|Highest in the Room|FE!N|I Know ?',
+ 'The Weeknd': 'Wicked Games|The Morning|High for This|The Hills|Can’t Feel My Face|Often|Earned It|Starboy|I Feel It Coming|Reminder|Call Out My Name|Heartless|Blinding Lights|Save Your Tears|In Your Eyes|Die for You',
+ 'Rihanna': 'Pon de Replay|SOS|Unfaithful|Umbrella|Don’t Stop the Music|Disturbia|Take a Bow|Rude Boy|Only Girl (In the World)|What’s My Name?|S&M|We Found Love|Diamonds|Stay|Work|Needed Me',
+ 'Lil Wayne': 'Go DJ|Fireman|Hustler Musik|A Milli|Lollipop|Got Money|Mr. Carter|Mrs. Officer|Let the Beat Build|6 Foot 7 Foot|How to Love|She Will|Right Above It|Love Me|Mirror|Uproar',
+ 'Eminem': 'My Name Is|The Real Slim Shady|Stan|The Way I Am|Without Me|Cleanin’ Out My Closet|Lose Yourself|Sing for the Moment|Till I Collapse|Mockingbird|Like Toy Soldiers|When I’m Gone|Not Afraid|Love the Way You Lie|Rap God|Godzilla',
+ 'Jay-Z': 'Dead Presidents II|Can’t Knock the Hustle|Hard Knock Life|Big Pimpin’|I Just Wanna Love U|Izzo|Takeover|Girls, Girls, Girls|Song Cry|’03 Bonnie & Clyde|99 Problems|Dirt Off Your Shoulder|Public Service Announcement|Empire State of Mind|Run This Town|On to the Next One',
+ 'Outkast': 'Player’s Ball|Southernplayalisticadillacmuzik|ATLiens|Elevators|Rosa Parks|Aquemini|SpottieOttieDopaliscious|So Fresh, So Clean|Ms. Jackson|B.O.B.|The Whole World|Hey Ya!|The Way You Move|Roses|Prototype|Git Up, Git Out',
+ 'Snoop Dogg': 'Gin and Juice|Who Am I (What’s My Name)?|Doggy Dogg World|Murder Was the Case|Ain’t No Fun|Snoop’s Upside Ya Head|Still a G Thang|Beautiful|Drop It Like It’s Hot|Signs|Let’s Get Blown|Sensual Seduction|I Wanna Rock|Young, Wild & Free|Boss’ Life|Vato',
+ 'Nicki Minaj': 'Super Bass|Moment 4 Life|Your Love|Did It On’em|Fly|Starships|Pound the Alarm|Beez in the Trap|Va Va Voom|High School|Anaconda|Only|Truffle Butter|Chun-Li|Super Freaky Girl|Red Ruby Da Sleeze',
+ 'Future': 'Turn On the Lights|Move That Dope|March Madness|Mask Off|Fuck Up Some Commas|Codeine Crazy|Thought It Was a Drought|Stick Talk|Where Ya At|Low Life|Wicked|Used to This|Incredible|Life Is Good|Wait for U|PUFFIN ON ZOOTIEZ',
+ 'Missy Elliott': 'The Rain (Supa Dupa Fly)|Sock It 2 Me|Beep Me 911|Hot Boyz|She’s a Bitch|Get Ur Freak On|One Minute Man|4 My People|Work It|Gossip Folks|Pass That Dutch|I’m Really Hot|Lose Control|We Run This|WTF (Where They From)|Throw It Back'
+};
+export const artists = Object.keys(packs);
+export const catalog = Object.entries(packs).flatMap(([artist, titles], a) => titles.split('|').map((title, i) => ({ id: `${a}-${i}`, artist, title, color: a % 8 })));
