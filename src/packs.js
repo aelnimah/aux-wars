@@ -24,7 +24,6 @@ Future - Mask Off
 Jay-Z - Empire State of Mind
 Beyoncé - Formation
 Lizzo - Juice
-Calvin Harris - Feel So Close
 The Weeknd - Can't Feel My Face
 Dua Lipa - Don't Start Now
 Doja Cat - Say So
@@ -140,7 +139,9 @@ Billie Eilish - bad guy
 Mac Miller - Self Care
 Kanye West - Runaway
 Kid Cudi - Day 'N' Nite
-Don Toliver - No Idea`),
+Don Toliver - No Idea
+Tame Impala - The Less I Know The Better
+Glass Animals - Heat Waves`),
   },
   {
     id: 'gym', emoji: '💪', name: 'Gym Beast Mode', question: 'Best workout song?',
@@ -153,8 +154,6 @@ Kendrick Lamar - Backseat Freestyle
 Pop Smoke - Dior
 21 Savage - a lot
 Cardi B - I Like It
-David Guetta - Titanium
-Swedish House Mafia - Don't You Worry Child
 Meek Mill - Dreams and Nightmares
 Nas - Made You Look
 Gucci Mane - Lemonade
@@ -189,7 +188,8 @@ Alicia Keys - If I Ain't Got You
 Beyoncé - Irreplaceable
 Mary J. Blige - Not Gon' Cry
 Miley Cyrus - Flowers
-Bruno Mars - When I Was Your Man`),
+Bruno Mars - When I Was Your Man
+Coldplay - Fix You`),
   },
   {
     id: 'summer', emoji: '☀️', name: 'Summer Anthems', question: 'Best summer song?',
@@ -204,7 +204,6 @@ Justin Timberlake - CAN'T STOP THE FEELING!
 Luis Fonsi - Despacito
 Bad Bunny - Tití Me Preguntó
 Shakira - Waka Waka (This Time for Africa)
-Calvin Harris - This Is What You Came For
 Ed Sheeran - Shape of You
 Lil Nas X - Old Town Road
 Rihanna - Work
@@ -212,7 +211,7 @@ Bob Marley & The Wailers - Three Little Birds
 Wiz Khalifa - Black and Yellow
 Mark Ronson - Uptown Funk
 Doja Cat - Woman
-Kygo - Firestone`),
+Jack Johnson - Banana Pancakes`),
   },
   {
     id: '2010s', emoji: '📱', name: '2010s Bangers', question: 'Best 2010s hit?', desc: 'Radio hits from the streaming era',
@@ -224,7 +223,6 @@ Katy Perry - Roar
 Adele - Hello
 Fetty Wap - Trap Queen
 Justin Bieber - Sorry
-The Chainsmokers - Closer
 Imagine Dragons - Radioactive
 Maroon 5 - Sugar
 Ariana Grande - 7 rings
@@ -324,7 +322,9 @@ Kool & The Gang - Jungle Boogie
 Cupid - Cupid Shuffle
 Whitney Houston - I Wanna Dance With Somebody (Who Loves Me)
 Stevie Wonder - Signed, Sealed, Delivered I'm Yours
-Justin Timberlake - Can't Stop the Feeling!`),
+Justin Timberlake - Can't Stop the Feeling!
+Etta James - At Last
+Frankie Valli & The Four Seasons - Can't Take My Eyes off You`),
   },
   {
     id: 'oldschool', emoji: '📻', name: 'Old-School Rap', question: 'Best old-school rap song?', desc: 'Golden-era and 2000s hip-hop',
@@ -559,9 +559,194 @@ Kano - Hail
 Stormzy - Vossi Bop
 Skepta - Shutdown`),
   },
+  {
+    id: '80s', emoji: '🕹️', name: '80s Throwback', question: 'Best 80s song?', desc: 'Synths, big hair, big hooks',
+    songs: L(`
+Michael Jackson - Thriller
+Michael Jackson - Beat It
+Prince - Kiss
+Madonna - Material Girl
+a-ha - Take On Me
+Whitney Houston - How Will I Know
+Cyndi Lauper - Time After Time
+Duran Duran - Hungry Like the Wolf
+Tears for Fears - Everybody Wants To Rule The World
+Phil Collins - In the Air Tonight
+Wham! - Wake Me Up Before You Go-Go
+Eurythmics - Sweet Dreams (Are Made Of This)
+Kenny Loggins - Danger Zone
+Run-D.M.C. - Walk This Way
+Culture Club - Karma Chameleon
+Hall & Oates - Maneater
+Lionel Richie - Hello
+Janet Jackson - What Have You Done for Me Lately
+Stevie Wonder - I Just Called to Say I Love You
+Bananarama - Cruel Summer
+Michael Jackson - Billie Jean`),
+  },
+  {
+    id: 'disco', emoji: '🪩', name: 'Disco & Funk Fever', question: 'Best groove?', desc: 'Impossible to sit still',
+    songs: L(`
+ABBA - Mamma Mia
+Earth, Wind & Fire - September
+Jackson 5 - I Want You Back
+Stevie Wonder - Sir Duke
+Kool & The Gang - Celebration
+CHIC - Le Freak
+Diana Ross - I'm Coming Out
+Gloria Gaynor - I Will Survive
+Donna Summer - Hot Stuff
+Sister Sledge - We Are Family
+Village People - Y.M.C.A.
+Lipps Inc. - Funkytown
+Dua Lipa - Physical
+Robyn - Dancing On My Own
+Kylie Minogue - Can't Get You Out of My Head
+Madonna - Hung Up
+Bee Gees - Stayin' Alive
+Parliament - Flash Light
+Prince - Let's Go Crazy`),
+  },
+  {
+    id: 'karaoke', emoji: '🎙️', name: 'Karaoke Classics', question: 'Best karaoke song?', desc: 'The ones you will absolutely attempt',
+    songs: L(`
+ABBA - Dancing Queen
+Elton John - Tiny Dancer
+Frank Sinatra - My Way
+Aretha Franklin - Respect
+Cyndi Lauper - Girls Just Want to Have Fun
+Prince - Purple Rain
+Michael Jackson - Don't Stop 'Til You Get Enough
+Madonna - Like a Prayer
+Céline Dion - My Heart Will Go On
+Kelly Clarkson - Stronger (What Doesn't Kill You)
+Ricky Martin - Livin' la Vida Loca
+Blondie - Heart Of Glass
+Billy Joel - Piano Man
+Stevie Wonder - Superstition
+Lionel Richie - All Night Long (All Night)
+Rick Astley - Never Gonna Give You Up
+Tina Turner - Proud Mary
+Whitney Houston - I Wanna Dance With Somebody (Who Loves Me)
+Mariah Carey - Hero
+Backstreet Boys - I Want It That Way`),
+  },
+  {
+    id: 'roadtrip', emoji: '🚗', name: 'Singalong Classics', question: 'Best song to scream in the car?', desc: 'Everybody knows the words',
+    songs: L(`
+Backstreet Boys - I Want It That Way
+Whitney Houston - I Will Always Love You
+Elton John - Rocket Man
+Neil Diamond - Sweet Caroline
+Taylor Swift - Shake It Off
+Lizzo - Good as Hell
+Lady Gaga - Bad Romance
+Beyoncé - Single Ladies (Put a Ring on It)
+Bruno Mars - Just the Way You Are
+Katy Perry - Firework
+Kelly Clarkson - Since U Been Gone
+Britney Spears - Oops!...I Did It Again
+Destiny's Child - Survivor
+Michael Jackson - Man in the Mirror
+Céline Dion - It's All Coming Back to Me Now
+Adele - Rolling in the Deep
+Rihanna - Umbrella
+Shakira - Hips Don't Lie
+Ed Sheeran - Shape of You
+Pharrell Williams - Happy`),
+  },
+  {
+    id: 'movie', emoji: '🎬', name: 'Movie Soundtracks', question: 'Best song from a movie?', desc: 'Credits-rolling classics',
+    songs: L(`
+Bill Medley - (I've Had) The Time Of My Life
+Wiz Khalifa - See You Again
+Lady Gaga - Shallow
+Adele - Skyfall
+Billie Eilish - No Time To Die
+Kendrick Lamar - All The Stars
+Ray Parker Jr. - Ghostbusters
+Berlin - Take My Breath Away
+Eminem - Lose Yourself
+Kenny Loggins - Footloose
+Celine Dion - My Heart Will Go On
+Phil Collins - You'll Be In My Heart
+Glen Hansard - Falling Slowly
+Whitney Houston - I Will Always Love You
+Lionel Richie - Say You, Say Me
+Irene Cara - Flashdance... What a Feeling
+Coolio - Gangsta's Paradise
+Will Smith - Men in Black
+Beyoncé - Listen
+Rihanna - Lift Me Up`),
+  },
+  {
+    id: 'sunday', emoji: '☕', name: 'Sunday Morning', question: 'Best Sunday-morning song?', desc: 'Pancakes and good vibes',
+    songs: L(`
+Jack Johnson - Better Together
+Norah Jones - Come Away With Me
+Jason Mraz - I'm Yours
+Bill Withers - Lovely Day
+The Beatles - Here Comes The Sun
+Stevie Wonder - Isn't She Lovely
+Van Morrison - Brown Eyed Girl
+Ben E. King - Stand By Me
+Otis Redding - (Sittin' On) The Dock Of The Bay
+Carole King - You've Got A Friend
+James Taylor - Fire and Rain
+Khruangbin - Time (You and I)
+Leon Bridges - Coming Home
+Michael Kiwanuka - Cold Little Heart
+Harry Styles - Adore You
+Marvin Gaye - Let's Get It On
+Sade - By Your Side
+Erykah Badu - On & On`),
+  },
+  {
+    id: 'rainy', emoji: '🌧️', name: 'Rainy Day', question: 'Best song for a rainy day?', desc: 'Blankets, tea, feelings',
+    songs: L(`
+Norah Jones - Don't Know Why
+Bon Iver - Holocene
+Billie Eilish - ocean eyes
+Lana Del Rey - Video Games
+Coldplay - The Scientist
+Radiohead - No Surprises
+Cigarettes After Sex - Apocalypse
+Mazzy Star - Fade Into You
+Adele - Hometown Glory
+Ed Sheeran - Photograph
+Jeff Buckley - Hallelujah
+Damien Rice - The Blower's Daughter
+The xx - Intro
+Frank Ocean - Pink + White
+Nina Simone - Feeling Good
+Bill Withers - Ain't No Sunshine
+Sam Cooke - A Change Is Gonna Come
+Tracy Chapman - Fast Car
+Lorde - Ribs`),
+  },
+  {
+    id: 'onehit', emoji: '🦄', name: 'One-Hit Wonders', question: 'Best one-hit wonder?', desc: 'They only needed one',
+    songs: L(`
+Soft Cell - Tainted Love
+Los del Río - Macarena (Bayside Boys Mix)
+Vanilla Ice - Ice Ice Baby
+Technotronic - Pump Up The Jam
+Baha Men - Who Let The Dogs Out
+Right Said Fred - I'm Too Sexy
+Sir Mix-A-Lot - Baby Got Back
+Dexys Midnight Runners - Come On Eileen
+OMI - Cheerleader
+Carl Douglas - Kung Fu Fighting
+Lou Bega - Mambo No. 5 (A Little Bit of...)
+Haddaway - What Is Love
+Natalie Imbruglia - Torn
+Gotye - Somebody That I Used To Know
+Chingy - Right Thurr
+Sean Kingston - Beautiful Girls
+Cupid - Cupid Shuffle`),
+  },
   // Live Deezer charts: always fresh, wide open.
   { id: 'spotlight', emoji: '🎯', name: 'Artist Spotlight (live)', spotlight: true, desc: 'A random chart artist: best song by them?' },
-  { id: 'chart-all', emoji: '📈', name: 'Top Charts (live)', question: 'Best song on the charts right now?', desc: 'Whatever is hot this week', chart: 0 },
   { id: 'chart-rap', emoji: '📈', name: 'Rap Charts (live)', question: 'Best rap song on the charts?', desc: 'Current hip-hop top tracks', chart: 116 },
   { id: 'chart-pop', emoji: '📈', name: 'Pop Charts (live)', question: 'Best pop song on the charts?', desc: 'Current pop top tracks', chart: 132 },
   { id: 'chart-rnb', emoji: '📈', name: 'R&B Charts (live)', question: 'Best R&B song on the charts?', desc: 'Current R&B top tracks', chart: 165 },

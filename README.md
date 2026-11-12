@@ -35,11 +35,11 @@ Host keys: **Space** = the big button, **P** = pause/resume auto-reveal, **M** =
 
 ## Where the songs come from
 
-- **Themes** (`src/packs.js`) are 23 curated lists with a question each, all hip-hop, R&B, pop, Afrobeats, dancehall and Latin (pregame, breakup, slow jams, Afrobeats, UK rap, trap...). Add your own: it's one line per song (`Artist - Title`).
+- **Themes** (`src/packs.js`) are 31 curated lists with a question each: hip-hop, R&B, pop, Afrobeats, dancehall, Latin, plus classics (Whitney, Michael Jackson, 80s, disco, karaoke). Rock, metal, country and EDM are deliberately left out. Add your own: it's one line per song (`Artist - Title`).
 - **Surprise me** mixes all themes at random, so every game is different and themes don't repeat.
 - **Artist Spotlight** picks random artists from the live charts: "Best <artist> song?".
 - **Live charts** pull Deezer's current top tracks per genre, so those rounds are different every time.
-- **Previews and artwork** come from Deezer's free public API (no account or key). If Deezer can't be reached, the game still works:
+- **Previews and artwork** come from Deezer's free public API (no account or key). Songs Deezer can't find fall back to Apple's iTunes Search API (also keyless, but limited to ~20 requests/minute, so it's only used for misses). If Deezer can't be reached, the game still works:
   songs just show colored cards and have no audio (the host can play them from another app).
 
 ## Project layout
@@ -49,5 +49,12 @@ Host keys: **Space** = the big button, **P** = pause/resume auto-reveal, **M** =
 - `src/packs.js`, `src/music.js`: themes and the Deezer lookup.
 - `public/`: host screen, phone screen, styles (plain HTML/JS, no build step).
 - `tests/`: `npm test` plays complete simulated games.
+
+## Trying changes
+
+- `npm run dev` restarts the server automatically when server code changes; refresh the browser for screen changes.
+- `npm test` plays complete simulated games in a few seconds, no browser or internet needed.
+- `AUXWARS_OFFLINE=1 npm start` skips all music lookups (colored cards, no audio) for quick UI checks.
+- Pulling updates: `git pull`, then `npm install` only if `package.json` changed.
 
 Rooms live in memory and expire after 24 hours; restarting the server ends all games.

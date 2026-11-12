@@ -29,6 +29,18 @@ function artistMatches(spec, hit) {
   return !!a && !!b && (b.includes(a) || a.includes(b) || b.split(' ')[0] === a.split(' ')[0]);
 }
 
+// Apple's iTunes Search API is a keyless second source (30s previews + artwork), but it allows only
+// ~20 requests/minute, so it is used only for songs Deezer misses, spaced a few seconds apart.
+let lastItunes = 0;
+async function itunesLookup(artist, title) {
+  const slot = Math.max(Date.now(), lastItunes + 3200);
+  lastItunes = slot;
+  if (slot > Date.now()) await new Promise((r) => setTimeout(r, slot - Date.now()));
+  const j = await getJson(`https://itunes.apple.com/search?term=${encodeURIComponent(`${artist} ${title}`)}&media=music&entity=song&limit=5`);
+  const hit = (j.results || []).find((r) => r.previewUrl && artistMatches(artist, { artist: { name: r.artistName } }));
+  return hit ? { preview: hit.previewUrl, cover: hit.artworkUrl100 ? hit.artworkUrl100.replace('100x100', '600x600') : null } : null;
+}
+
 export const music = {
   /** Look up one song by artist + title. Returns {preview, cover} or null. */
   async resolveTrack(artist, title) {
@@ -45,6 +57,7 @@ export const music = {
         hit = (j.data || []).find((h) => h.preview && artistMatches(artist, h));
       }
       if (hit) out = shape(hit);
+      else out = await itunesLookup(artist, title).catch(() => null);
     } catch {
       return null; // don't cache failures
     }
