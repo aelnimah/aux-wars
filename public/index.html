@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aux Wars</title><link rel="stylesheet" href="/style.css">
+</head><body>
+<main class="landing"><div>
+  <h1 class="logo">AUX WARS</h1>
+  <p>Eight songs. One vote each. Last track standing wins the aux.</p>
+  <div class="row"><a class="btn primary big" href="/host">🎧 Host a game</a></div>
+  <form class="join-form" id="f">
+    <input type="text" id="code" class="code-input" placeholder="ROOM CODE" maxlength="6" autocomplete="off" autocapitalize="characters">
+    <button class="btn big" type="submit">Join</button>
+  </form>
+</div></main>
+<script>
+  document.getElementById('f').onsubmit = (e) => { e.preventDefault(); const c = document.getElementById('code').value.trim(); if (c) location.href = '/join?room=' + encodeURIComponent(c); };
+</script>
+</body></html>
