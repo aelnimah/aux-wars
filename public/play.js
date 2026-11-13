@@ -1,4 +1,4 @@
-import { $, esc, api, cover, connect, morph, pchip } from './shared.js';
+import { store, $, esc, api, cover, connect, morph, pchip } from './shared.js';
 
 const app = $('#app');
 const params = new URLSearchParams(location.search);
@@ -9,7 +9,7 @@ let err = '';
 let es = null;
 let animKey = '';
 
-const saved = () => { const x = JSON.parse(localStorage.getItem('aux-player') || '{}'); return x.code === code ? x : null; };
+const saved = () => { const x = store.json('aux-player'); return x && x.code === code ? x : null; };
 
 // keep the screen awake during the game
 let wake = null;
@@ -17,20 +17,23 @@ async function keepAwake() { try { wake = await navigator.wakeLock?.request('scr
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && me) keepAwake(); });
 
 function joinHtml() {
-  return `<div class="center"><div class="logo" style="font-size:2.8rem;font-weight:900">AUX WARS</div>
+  return `<div class="center"><a class="logo" href="/">Aux Wars</a>
     ${err ? `<div class="err">${esc(err)}</div>` : ''}
-    <input type="text" id="code" class="code-input" placeholder="ROOM CODE" maxlength="6" value="${esc(code)}" autocapitalize="characters" autocomplete="off">
-    <input type="text" id="name" placeholder="Your nickname" maxlength="16" autocomplete="nickname" value="${esc(localStorage.getItem('aux-name') || '')}" style="width:min(300px,100%);text-align:center">
+    <input type="text" id="code" class="code-input" placeholder="Room code" maxlength="6" aria-label="Room code" value="${esc(code)}" autocapitalize="characters" autocomplete="off">
+    <input type="text" id="name" placeholder="Your name" maxlength="16" autocomplete="nickname" aria-label="Your name" value="${esc(store.get('aux-name') || '')}">
     <button class="btn primary big" data-act="join">Join game</button></div>`;
 }
 
 const row = (x, cls = '', { tag = 'div', act = '', right = '' } = {}) =>
   `<${tag} class="optrow ${cls}" data-key="${x.id}" ${act}>${cover(x)}<div class="txt"><div class="t">${esc(x.title)}</div><div class="a">${esc(x.artist)}</div></div>${right}</${tag}>`;
-const bar = (t) => `<div class="stickybar">${t}</div>`;
+// The status bar is rendered outside the animated screen so it stays pinned to the bottom of the phone.
+let barHtml = '';
+const bar = (t) => { barHtml = `<div class="stickybar">${t}</div>`; return ''; };
 
 function gameHtml() {
   const m = s.match;
   let body = '';
+  barHtml = '';
   switch (s.phase) {
     case 'lobby':
       body = `<div class="center"><div class="em">🎧</div><h2>You’re in, ${esc(s.me.name)}!</h2><p class="muted">Waiting for the host to start. Keep an eye on the big screen.</p>
@@ -61,7 +64,7 @@ function gameHtml() {
       const r = m.result, mine = s.me.vote;
       const msg = r.tie ? '🤝 Tie! Another vote is coming.' : mine === r.winnerId ? '🎉 Your pick won!' : mine ? 'Your pick lost this one.' : 'Results are in.';
       body = `<div class="heading"><small class="muted">${esc(m.label)}</small><h2>${msg}</h2></div><div style="height:16px"></div>
-        ${[...m.songs].sort((p, q) => r.tallies[q.id].n - r.tallies[p.id].n).map((x) => row(x, `${r.winnerId === x.id ? 'win' : ''} ${mine === x.id ? 'sel' : ''}`, { right: `<span class="pctn">${r.tallies[x.id].pct}%</span>` })).join('')}
+        ${[...m.songs].sort((p, q) => r.tallies[q.id].n - r.tallies[p.id].n).map((x) => row(x, `${r.winnerId === x.id ? 'win' : ''} ${mine === x.id ? 'mine' : ''}`, { right: `${mine === x.id ? '<span class="chip small">Your pick</span>' : ''}<span class="pctn">${r.tallies[x.id].pct}%</span>` })).join('')}
         ${bar('Watch the big screen')}`;
       break;
     }
@@ -71,8 +74,8 @@ function gameHtml() {
       break;
   }
   const screen = m && ['intro', 'reveal', 'voting', 'results'].includes(s.phase) ? 'm' + m.token : s.phase;
-  return `<div class="topbar"><a class="logo" href="/" title="Main page">AUX WARS</a><span class="progress">${pchip(s.me.name, 'small')}${s.progress ? `<span>${s.progress.n}/${s.progress.of}</span>` : ''}</span></div>
-    ${err ? `<div class="err" style="margin-bottom:12px">${esc(err)}</div>` : ''}<div class="screen" data-key="${screen}">${body}</div>`;
+  return `<div class="topbar"><a class="logo" href="/" title="Main page">Aux Wars</a><span class="progress">${pchip(s.me.name, 'small')}${s.progress ? `<span>${s.progress.n}/${s.progress.of}</span>` : ''}</span></div>
+    ${err ? `<div class="err" style="margin-bottom:12px">${esc(err)}</div>` : ''}<div class="screen" data-key="${screen}">${body}</div>${barHtml}`;
 }
 
 function render() {
@@ -89,13 +92,13 @@ app.addEventListener('click', async (e) => {
     try {
       const r = await api('/api/join', { code, name });
       me = { pid: r.pid, name: r.name };
-      localStorage.setItem('aux-player', JSON.stringify({ code, ...me }));
-      localStorage.setItem('aux-name', name);
+      store.set('aux-player', JSON.stringify({ code, ...me }));
+      store.set('aux-name', name);
       history.replaceState(null, '', `/join?room=${code}`);
       err = ''; start(); keepAwake();
     } catch (x) { err = x.message; render(); }
   }
-  if (t.dataset.act === 'leave') { localStorage.removeItem('aux-player'); location.href = '/'; return; }
+  if (t.dataset.act === 'leave') { store.del('aux-player'); location.href = '/'; return; }
   if (t.dataset.act === 'vote' && s?.phase === 'voting') {
     const id = t.dataset.id;
     if (s.me.vote === id) return;
@@ -110,7 +113,7 @@ function start() {
   es = connect(`/api/events?code=${code}&pid=${me.pid}`, (st) => {
     if (st.phase === 'voting' && s?.phase !== 'voting') navigator.vibrate?.([40, 40, 40]); // nudge: voting is open
     s = st; err = ''; render();
-  }, () => { localStorage.removeItem('aux-player'); me = null; s = null; err = 'That game has ended.'; render(); }, code);
+  }, () => { store.del('aux-player'); me = null; s = null; err = 'That game has ended.'; render(); }, code);
 }
 
 setInterval(() => {

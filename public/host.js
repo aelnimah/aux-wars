@@ -1,9 +1,11 @@
-import { $, esc, api, cover, connect, morph, pchip, playerHue as hueOf } from './shared.js';
+import { store, $, esc, api, cover, connect, morph, pchip, playerHue as hueOf } from './shared.js';
 
 const app = $('#app');
-let session = JSON.parse(localStorage.getItem('aux-host') || 'null'); // {code, key, hostPid}
+let session = store.json('aux-host'); // {code, key, hostPid}
 let s = null;                       // latest server state
 let info = { urls: [], port: 3000 };
+let help = null;                    // connection help open? null = decide from the firewall check
+let copied = false;
 let meta = { packs: [], qualifiers: [] };
 let form = { qualifiers: 8, mode: 'surprise', packs: null, autoSeconds: 12, voteSeconds: 0, autoNext: 0, hostPlays: true, more: false };
 let err = '', notice = '';
@@ -13,8 +15,8 @@ let blocked = false;                // browser refused to autoplay
 
 // ---------- audio (host speakers) ----------
 const audio = new Audio();
-let vol = Number(localStorage.getItem('aux-vol') ?? 80) / 100;
-let muted = localStorage.getItem('aux-muted') === '1';
+let vol = Number(store.get('aux-vol') ?? 80) / 100;
+let muted = store.get('aux-muted') === '1';
 let lastPlayKey = '', fade = null;
 const target = () => (muted ? 0 : vol);
 function ramp(to, ms, done) {
@@ -41,10 +43,10 @@ function syncAudio() {
 }
 $('#vol').value = Math.round(vol * 100);
 $('#mute').textContent = muted ? '🔇' : '🔊';
-$('#vol').oninput = (e) => { vol = e.target.value / 100; localStorage.setItem('aux-vol', e.target.value); if (!muted) audio.volume = vol; };
+$('#vol').oninput = (e) => { vol = e.target.value / 100; store.set('aux-vol', e.target.value); if (!muted) audio.volume = vol; };
 $('#mute').onclick = toggleMute;
 function toggleMute() {
-  muted = !muted; localStorage.setItem('aux-muted', muted ? '1' : '0');
+  muted = !muted; store.set('aux-muted', muted ? '1' : '0');
   $('#mute').textContent = muted ? '🔇' : '🔊'; audio.volume = target();
 }
 
@@ -69,8 +71,8 @@ function primary() {
   const m = s.match;
   switch (s.phase) {
     case 'lobby': return s.players.length ? { act: 'start', label: 'Start game' } : null;
-    case 'intro': return { act: 'reveal', label: 'Skip intro ▶' };
-    case 'reveal': return m.revealed >= m.total ? { act: 'reveal', label: 'Open voting 🗳️' } : { act: 'reveal', label: 'Reveal next song ▶' };
+    case 'intro': return { act: 'reveal', label: 'Skip intro' };
+    case 'reveal': return m.revealed >= m.total ? { act: 'reveal', label: 'Open voting' } : { act: 'reveal', label: 'Reveal next song' };
     case 'voting': return { act: 'closeVoting', label: 'Reveal results' };
     case 'results':
       if (m.result.tie) return preferDraw(m) ? { act: 'randomTie', label: '🎲 Random draw' } : { act: 'tiebreak', label: 'Tiebreak vote' };
@@ -99,21 +101,21 @@ function shellHtml() {
   const body = { lobby: lobbyHtml, loading: loadingHtml, intro: introHtml, reveal: matchHtml, voting: matchHtml, results: matchHtml, champion: championHtml }[s.phase]();
   const p = s.progress;
   const prog = p ? `<div class="mid"><div class="progress"><span>${s.match?.kind === 'knockout' ? '⚔️ Knockout' : 'Qualifying'}</span><span>Match ${p.n} of ${p.of}</span></div><div class="track"><i style="width:${Math.round(((p.n - (s.phase === 'champion' ? 0 : 1)) / p.of) * 100)}%"></i></div></div>` : '<div></div>';
-  return `<div class="topbar"><a class="logo" href="/" data-act="home" title="Main page">AUX WARS</a>${prog}<span class="roomtag">Room <b>${esc(s.code)}</b> · ${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}
-      <button class="chip small" data-act="home">⌂ Home</button><button class="chip small" data-act="end">End game</button></span></div>
+  return `<div class="topbar"><a class="logo" href="/" data-act="home" title="Back to the main page">Aux Wars</a>${prog}<span class="roomtag">Room <b>${esc(s.code)}</b> · ${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}
+      <button class="chip small" data-act="home">Main page</button><button class="chip small" data-act="end">End game</button></span></div>
     ${blocked ? '<div class="banner" data-act="unmute">🔇 Your browser blocked sound. Click anywhere here to turn it on.</div>' : ''}
     ${err ? `<div class="err" style="margin-bottom:14px">${esc(err)}</div>` : ''}
     <div class="screen" data-key="${s.match && ['intro', 'reveal', 'voting', 'results'].includes(s.phase) ? 'm' + s.match.token : s.phase}">${body}</div>`;
 }
 
 function setupHtml() {
-  if (!meta.packs.length) return '<div class="loading"><div><div class="spinner"></div></div></div>';
+  if (!meta.packs.length) return '<div class="loading"><div><div class="spinner"></div><p class="muted">Loading…</p></div></div>';
   if (!form.packs) form.packs = meta.packs.filter((p) => !p.live).map((p) => p.id);
   const on = (id) => form.packs.includes(id);
   const chip = (key, val, label) => `<button class="chip ${form[key] === val ? 'on' : ''}" data-act="set" data-setting="${key}" data-val="${val}">${label}</button>`;
   const len = (q, name, blurb) => `<button class="opt-card ${form.qualifiers === q ? 'on' : ''}" data-act="set" data-setting="qualifiers" data-val="${q}"><b>${name}</b><small>${q} rounds + ${q - 1} knockout matches · ${blurb}</small></button>`;
   return `<div class="setup">
-    <div><a class="logo" href="/" style="font-size:1.5rem">AUX WARS</a><h2 style="margin-top:14px">Let’s set up the game</h2></div>
+    <div><a class="logo" href="/" style="font-size:1.9rem" title="Back to the main page">Aux Wars</a><h2 style="margin-top:18px">Set up the game</h2></div>
     ${notice ? `<div class="banner">${esc(notice)}</div>` : ''}${err ? `<div class="err">${esc(err)}</div>` : ''}
     <div class="sec"><h3>How long?</h3><div class="row">${len(4, 'Quick', 'short and sweet')}${len(8, 'Classic', 'the full experience')}${len(16, 'Marathon', 'serious aux energy')}</div>
       <p class="est" style="margin-top:12px">Roughly <b>${estimate()} minutes</b> with these settings.</p></div>
@@ -129,27 +131,35 @@ function setupHtml() {
       <div class="sec"><h3>Voting timer</h3><div class="row">${chip('voteSeconds', 0, 'No timer')}${chip('voteSeconds', 30, '30 sec')}${chip('voteSeconds', 60, '60 sec')}</div></div>
       <div class="sec"><h3>After results</h3><div class="row">${chip('autoNext', 0, 'Wait for me')}${chip('autoNext', 6, 'Continue after 6 sec')}${chip('autoNext', 10, 'Continue after 10 sec')}</div></div>
       <div class="sec"><h3>You</h3><div class="row"><button class="chip ${form.hostPlays ? 'on' : ''}" data-act="toggle" data-setting="hostPlays">${form.hostPlays ? '✓' : ''} I’m playing too (vote from this screen)</button></div></div></div>` : ''}
-    <div><button class="btn primary big" data-act="create">Create room →</button></div></div>`;
+    <div><button class="btn primary big" data-act="create">Create room</button></div></div>`;
 }
 
 function lobbyHtml() {
   const url = joinUrl();
-  const alt = info.urls.slice(1);
+  const blockedFw = info.firewall?.status === 'blocked';
+  const open = help ?? blockedFw;
+  const n = s.players.length;
+  const st = s.settings;
+  const summary = [`${st.qualifiers} rounds`, st.mode === 'surprise' ? 'random themes' : `${st.packs.length} themes`, st.autoSeconds ? `${st.autoSeconds} seconds per song` : 'manual reveals', st.voteSeconds ? `${st.voteSeconds} second votes` : ''].filter(Boolean).join(', ');
+  const steps = [
+    'Put the phone on the <b>same Wi-Fi</b> as this computer. Guest Wi-Fi and mobile data won’t reach it.',
+    info.windows ? `${blockedFw ? '<b>Windows Firewall is blocking phones right now.</b> ' : ''}In the game’s folder, double-click <code>fix-firewall.cmd</code> and choose Yes. Then restart the game.` : '',
+    info.urls.length > 1 ? `This computer has ${info.urls.length} network addresses. If the code doesn’t open, try another one:<div class="addrs">${info.urls.map((u, i) => `<button class="chip small ${i === addrIdx ? 'on' : ''}" data-act="addr" data-i="${i}">${esc(u.replace('http://', ''))}${info.names?.[i] ? ` (${esc(info.names[i])})` : ''}</button>`).join('')}</div>` : '',
+  ].filter(Boolean);
   return `<div class="lobby">
-    <div><div class="qr"><img alt="Join QR code" src="/api/qr?text=${encodeURIComponent(url)}"></div>
-      <div class="roomcode logo">${esc(s.code)}</div>
-      <div class="joinurl">${esc(url.replace('http://', ''))}</div>
-      <p class="note" style="margin-top:10px">${info.urls.length ? 'Phones must be on the same Wi-Fi as this computer.' : '⚠️ No Wi-Fi network found. Phones can’t join until this computer is online.'}</p>
-      ${info.urls.length > 1 ? `<div class="addrs"><span class="muted">Phone can’t open it? Pick another address:</span><div class="row" style="gap:8px;margin-top:8px">${info.urls.map((u, i) => `<button class="chip small ${i === addrIdx ? 'on' : ''}" data-act="addr" data-i="${i}">${esc(u.replace('http://', ''))}${info.names?.[i] ? ` <span class="muted">· ${esc(info.names[i])}</span>` : ''}</button>`).join('')}</div></div>` : ''}
-      <p class="note" style="margin-top:8px">Still stuck? Windows may be blocking Node. Allow it on Private networks when the firewall pops up.</p>
-      <button class="btn small" style="margin-top:12px" data-act="copy">📋 Copy join link</button></div>
-    <div><h2>${s.players.length ? `${s.players.length} in the room` : 'Waiting for players…'}</h2>
-      <div class="players">${s.players.map((p) => `<span class="chip pl big ${p.online ? '' : 'off'}" data-key="${p.id}" style="--ph:${hueOf(p.name)}"><i class="dot"></i>${p.host ? '🎧 ' : ''}${esc(p.name)}${p.host ? '' : ` <button class="chip small x" data-act="kick" data-pid="${p.id}" title="Remove">✕</button>`}</span>`).join('') || '<span class="muted">Nobody yet. Scan the code!</span>'}</div>
+    <div><div class="ticket"><div class="qr"><img alt="QR code to join" src="/api/qr?text=${encodeURIComponent(url)}"></div>
+        <small>Scan to join, or enter code</small><div class="roomcode">${esc(s.code)}</div></div>
+      <div class="joinurl"><small>Or open this on a phone</small>${info.urls.length ? esc(url.replace('http://', '')) : 'No network found. Connect this computer to Wi-Fi.'}</div>
+      <button class="btn small" style="margin-top:12px" data-act="copy">${copied ? 'Copied' : 'Copy join link'}</button>
+      <div class="help ${blockedFw ? 'warn' : ''}"><button data-act="help"><span>${blockedFw ? 'Phones are being blocked' : 'Phone shows a blank screen?'}</span><span>${open ? '−' : '+'}</span></button>
+        ${open ? `<ol>${steps.map((x) => `<li>${x}</li>`).join('')}</ol>` : ''}</div></div>
+    <div><h2>${n ? `${n} in the room` : 'Waiting for players'}</h2>
+      <div class="players">${s.players.map((p) => `<span class="chip pl big ${p.online ? '' : 'off'}" data-key="${p.id}" style="--ph:${hueOf(p.name)}"><i class="dot"></i>${p.host ? '🎧 ' : ''}${esc(p.name)}${p.host ? '' : ` <button class="chip small x" data-act="kick" data-pid="${p.id}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}">✕</button>`}</span>`).join('') || '<span class="muted">Nobody yet. Scan the code with a phone camera.</span>'}</div>
       ${s.error ? `<div class="err" style="margin-bottom:16px">${esc(s.error)}</div>` : ''}
-      <div class="row"><button class="btn primary big" data-act="start" ${s.players.length ? '' : 'disabled'}>Start game <kbd>Space</kbd></button>
-        <button class="btn" data-act="bots">+ Add 3 test players 🤖</button></div>
-      <p class="note" style="margin-top:16px">${s.settings.qualifiers} rounds · ${s.settings.mode === 'surprise' ? 'random themes' : s.settings.packs.length + ' themes'} · ${s.settings.autoSeconds ? s.settings.autoSeconds + ' sec of music per song' : 'manual reveals'}${s.settings.voteSeconds ? ' · ' + s.settings.voteSeconds + ' sec voting' : ''}</p>
-      <div class="how"><div><b>1 · Listen</b>Songs are revealed one at a time</div><div><b>2 · Vote</b>Pick your favorite on your phone</div><div><b>3 · Survive</b>Winners fight in a knockout</div></div></div></div>`;
+      <div class="row"><button class="btn primary big" data-act="start" ${n ? '' : 'disabled'}>Start game <kbd>Space</kbd></button>
+        <button class="btn big" data-act="bots">Add 3 test players</button></div>
+      <p class="note" style="margin-top:18px">${summary}. <button class="chip small" data-act="resetup">Change settings</button></p>
+      <div class="how"><span>Listen to eight songs</span><span>Vote on your phone</span><span>Winners fight in a knockout</span></div></div></div>`;
 }
 
 const loadingHtml = () => `<div class="loading"><div><div class="spinner"></div><div class="heading"><small>${esc(s.loading?.label || '')}</small><h2>${esc(s.loading?.question || 'Loading…')}</h2></div></div></div>`;
@@ -157,7 +167,7 @@ const loadingHtml = () => `<div class="loading"><div><div class="spinner"></div>
 function introHtml() {
   const m = s.match;
   return `<div class="intro" data-key="intro-${m.token}"><div class="em">${m.emoji}</div><small>${esc(m.label)}</small><h1>${esc(m.question)}</h1>
-    <div><button class="btn" data-act="reveal">Skip ▶</button></div></div>`;
+    <div><button class="btn" data-act="reveal">Skip intro <kbd>Space</kbd></button></div></div>`;
 }
 
 function cardHtml(song, i, m, mode) {
@@ -166,9 +176,10 @@ function cardHtml(song, i, m, mode) {
   const playing = m.nowPlaying === song.id && s.phase !== 'results';
   const mine = s.hostPlayer?.vote === song.id && s.phase === 'voting';
   const cls = ['card', s.phase !== 'results' ? 'clickable' : '', playing ? 'playing' : '', win ? 'winner' : '', tied ? 'tied' : '', mine ? 'mine' : '', m.result && !win && !tied ? 'dim' : ''].join(' ');
-  const badge = win ? '<span class="badge crown">👑 WINNER</span>' : tied ? '<span class="badge">TIED</span>' : !song.hasPreview ? '<span class="badge">no preview</span>' : '';
+  const bars = '<span class="eq"><i></i><i></i><i></i></span>';
+  const badge = win ? '<span class="badge crown">👑 Winner</span>' : tied ? '<span class="badge">Tied</span>' : !song.hasPreview ? '<span class="badge">No preview</span>' : playing ? `<span class="badge np">${bars} Now playing</span>` : '';
   const hv = s.phase === 'voting' && s.hostPlayer ? `<button class="hostvote ${mine ? 'on' : ''}" data-act="hostvote" data-id="${song.id}">${mine ? '✓ Your vote' : 'Vote'}</button>` : '';
-  const eq = playing ? '<span class="eq"><i></i><i></i><i></i></span>' : '';
+  const eq = playing ? bars : '';
   const from = song.from && m.kind === 'knockout' ? `<span class="from">👑 ${esc(song.from)}</span>` : '';
   let result = '';
   if (res) {
@@ -222,16 +233,16 @@ function championHtml() {
     st.mostDivided && stat('Most divided round', `<b>${esc(st.mostDivided.question)}</b>${esc(st.mostDivided.winner.title)} squeaked by with ${st.mostDivided.pct}%`),
     st.championFans.length && stat('Champion’s fan club', `<b>${st.championFans.map(esc).join(', ')}</b>voted for the winner in the final`),
   ].filter(Boolean).join('');
-  return `<div class="champion"><div class="crown">👑</div><div class="heading"><small>The aux belongs to</small></div>
+  return `<div class="champion"><div class="crown">👑</div><h1>The aux belongs to</h1>
     <div class="card winner">${cover(c)}<div class="meta"><div class="t" style="font-size:1.6rem">${esc(c.title)}</div><div class="a">${esc(c.artist)}</div></div></div>
     ${stats ? `<div class="stats">${stats}</div>` : ''}
-    <div class="panel path"><h3 class="muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Qualifying winners</h3><ul style="padding:0">${s.path.map((p) => `<li><span>${esc(p.question)}</span><b>${esc(p.title)} · <span class="muted">${esc(p.artist)}</span></b></li>`).join('')}</ul></div>
+    <div class="panel path"><h3>Round winners</h3><ul style="padding:0">${s.path.map((p) => `<li><span>${esc(p.question)}</span><b>${esc(p.title)} · <span class="muted">${esc(p.artist)}</span></b></li>`).join('')}</ul></div>
     <button class="btn primary big" data-act="again">Play again <kbd>Space</kbd></button></div>`;
 }
 
 function confetti() {
   const el = $('#confetti'); el.innerHTML = '';
-  const colors = ['#ff3d81', '#ffb02e', '#2ee6a6', '#5aa9ff', '#fff'];
+  const colors = ['#ffd60a', '#ff4b3a', '#4d8dff', '#2fe08f', '#f6f1e7'];
   for (let i = 0; i < 90; i++) {
     const p = document.createElement('i');
     p.style.cssText = `left:${Math.random() * 100}%;background:${colors[i % colors.length]};animation-duration:${2.5 + Math.random() * 3}s;animation-delay:${Math.random() * 1.5}s;transform:rotate(${Math.random() * 360}deg)`;
@@ -253,7 +264,7 @@ async function perform(act, d = {}) {
       try {
         const r = await api('/api/create', form);
         session = { code: r.code, key: r.key, hostPid: r.hostPid };
-        localStorage.setItem('aux-host', JSON.stringify(session));
+        store.set('aux-host', JSON.stringify(session));
         err = ''; notice = ''; open();
       } catch (x) { err = x.message; render(); }
       return;
@@ -261,7 +272,17 @@ async function perform(act, d = {}) {
     case 'bots': return call('addBots', { count: 3 });
     case 'kick': return call('kick', { pid: d.pid });
     case 'addr': addrIdx = Number(d.i) || 0; return render();
-    case 'copy': try { await navigator.clipboard.writeText(joinUrl()); notice = ''; err = ''; } catch { /* ignore */ } return;
+    case 'help': help = !(help ?? info.firewall?.status === 'blocked'); return render();
+    case 'copy': {
+      const text = joinUrl();
+      try { await navigator.clipboard.writeText(text); }
+      catch { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch { /* nothing else to try */ } t.remove(); }
+      copied = true; render(); setTimeout(() => { copied = false; render(); }, 1800); return;
+    }
+    case 'resetup': // back to setup: closes this room so settings can change
+      if (s.players.some((p) => !p.host && !p.bot) && !confirm('Change settings? This closes the room, and players will need to join the new one.')) return;
+      await api('/api/host', { code: session.code, key: session.key, action: 'close' }).catch(() => {});
+      store.del('aux-host'); session = null; s = null; es?.close(); return render();
     case 'reveal': case 'openVoting': case 'closeVoting': case 'tiebreak': case 'randomTie': case 'next': case 'pause': case 'resume': return call(act);
     case 'replay': audio.play().catch(() => {}); return call('replay', { songId: d.id });
     case 'hostvote':
@@ -273,7 +294,7 @@ async function perform(act, d = {}) {
     case 'end':
       if (!confirm('End this game for everyone? Players will be sent back to the main page.')) return;
       await api('/api/host', { code: session.code, key: session.key, action: 'close' }).catch(() => {});
-      localStorage.removeItem('aux-host'); session = null; s = null; es?.close(); audio.pause(); return render();
+      store.del('aux-host'); session = null; s = null; es?.close(); audio.pause(); return render();
     case 'again': return call('reset'); // back to the lobby with the same room and players
   }
 }
@@ -303,7 +324,7 @@ function open() {
     s = st; render(); syncAudio();
     if (st.phase === 'champion' && prev !== 'champion') confetti();
   }, () => {
-    localStorage.removeItem('aux-host'); session = null; s = null; es?.close();
+    store.del('aux-host'); session = null; s = null; es?.close();
     notice = 'That game has ended or the server restarted. Start a new one!'; render();
   }, session.code);
 }

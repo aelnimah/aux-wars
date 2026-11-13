@@ -6,7 +6,7 @@ Music party game: host screen on a laptop, voting on phones. Plain Node (no fram
 - `server.js`: HTTP routes, SSE broadcast, host auth. Keep it thin.
 - `src/game.js`: engine and per-role views (`viewFor`). All game rules live here.
 - `src/packs.js`: themed song pools (no chart/current content). `src/music.js`: Deezer lookups (previews/artwork), always optional.
-- `public/host.js`, `public/play.js`, `public/shared.js`, `public/style.css`: the two screens.
+- `public/host.js`, `public/play.js`, `public/shared.js`, `public/style.css`: the two screens. Fonts are bundled in `public/fonts` (no CDN). `fix-firewall.cmd`: Windows helper so phones can connect.
 
 ## Commands
 - `npm start` runs the app. `npm test` runs engine tests. `AUXWARS_OFFLINE=1` skips Deezer.

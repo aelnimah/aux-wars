@@ -1,10 +1,16 @@
 <!doctype html>
 <html lang="en" class="tv"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f0c18">
 <title>Aux Wars · Host</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎧%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="/style.css">
 </head><body>
-<div id="app" class="host"></div>
+<div id="app" class="host"><div class="boot"><span class="logo">AUX WARS</span><div class="spinner"></div><p id="bootmsg">Loading…</p></div></div>
 <div id="confetti" class="confetti"></div>
 <div class="dock" id="dock" title="Speaker volume"><button id="mute" aria-label="Mute">🔊</button><input id="vol" type="range" min="0" max="100" aria-label="Volume"></div>
+<script>
+  // If the game's script can't run on this device, say so on screen and offer a retry.
+  window.__boot = setTimeout(function () { var b = document.getElementById('bootmsg'); if (b) b.innerHTML = 'Still loading. Check that this device is on the same Wi-Fi as the host, then <a href="" style="color:#ffd60a">try again</a>.'; }, 6000);
+  window.addEventListener('error', function (e) { var b = document.getElementById('bootmsg'); if (b) b.textContent = 'This browser could not start the game (' + (e.message || 'script error') + '). Try updating it, or open the link in Chrome or Safari.'; });
+</script>
 <script type="module" src="/host.js"></script>
 </body></html>

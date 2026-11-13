@@ -1,8 +1,15 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0c18">
 <title>Aux Wars</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎧%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="/style.css">
 </head><body>
-<div id="app" class="phone"></div>
+<div id="app" class="phone"><div class="boot"><span class="logo">AUX WARS</span><div class="spinner"></div><p id="bootmsg">Connecting…</p></div></div>
+<noscript><p style="padding:24px;text-align:center">Aux Wars needs JavaScript turned on.</p></noscript>
+<script>
+  // If the game's script can't run on this device, say so on screen and offer a retry.
+  window.__boot = setTimeout(function () { var b = document.getElementById('bootmsg'); if (b) b.innerHTML = 'Still loading. Check that this device is on the same Wi-Fi as the host, then <a href="" style="color:#ffd60a">try again</a>.'; }, 6000);
+  window.addEventListener('error', function (e) { var b = document.getElementById('bootmsg'); if (b) b.textContent = 'This browser could not start the game (' + (e.message || 'script error') + '). Try updating it, or open the link in Chrome or Safari.'; });
+</script>
 <script type="module" src="/play.js"></script>
 </body></html>

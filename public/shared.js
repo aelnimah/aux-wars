@@ -1,8 +1,19 @@
 export const $ = (sel, el = document) => el.querySelector(sel);
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+// Some phone browsers (private tabs, in-app QR scanners) refuse storage and throw. Fall back to memory.
+const mem = new Map();
+export const store = {
+  get(k) { try { return localStorage.getItem(k) ?? mem.get(k) ?? null; } catch { return mem.get(k) ?? null; } },
+  set(k, v) { mem.set(k, String(v)); try { localStorage.setItem(k, String(v)); } catch { /* memory only */ } },
+  del(k) { mem.delete(k); try { localStorage.removeItem(k); } catch { /* memory only */ } },
+  json(k) { try { return JSON.parse(this.get(k) || 'null'); } catch { return null; } },
+};
+
 export async function api(path, body) {
-  const res = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : undefined);
+  let res;
+  try { res = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : undefined); }
+  catch { throw new Error('Can’t reach the game. Check the Wi-Fi and try again.'); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Something went wrong');
   return data;

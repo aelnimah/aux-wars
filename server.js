@@ -3,13 +3,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFile } from 'node:child_process';
 import QRCode from 'qrcode';
 import { PACKS } from './src/packs.js';
 import { rooms, createRoom, addPlayer, castVote, hostAction, closeRoom, viewFor, sweepRooms, GameError, QUALIFIER_OPTIONS, totalMatches } from './src/game.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
 const PAGES = { '/': 'index.html', '/host': 'host.html', '/join': 'play.html' };
 
 const listeners = new Map(); // code -> Set<{res, role, pid}>
@@ -32,6 +33,30 @@ function lanUrls() {
     found.push({ url: `http://${i.address}:${PORT}`, name, score });
   }
   return found.sort((a, b) => b.score - a.score);
+}
+
+// On Windows the usual reason phones get a blank page is the firewall silently dropping them.
+// Ask Windows once at startup whether Node is blocked, so the lobby can say so plainly.
+const firewall = { status: process.platform === 'win32' ? 'checking' : 'ok', network: '' };
+function checkFirewall() {
+  if (process.platform !== 'win32') return;
+  const exe = process.execPath.replace(/'/g, "''");
+  const ps = [
+    `$r = @(Get-NetFirewallApplicationFilter -Program '${exe}' -ErrorAction SilentlyContinue | Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object { $_.Enabled -eq 'True' -and $_.Direction -eq 'Inbound' })`,
+    `$block = @($r | Where-Object { $_.Action -eq 'Block' }).Count`,
+    `$allow = @($r | Where-Object { $_.Action -eq 'Allow' }).Count`,
+    `$port = @(Get-NetFirewallRule -DisplayName 'Aux Wars' -ErrorAction SilentlyContinue | Where-Object { $_.Enabled -eq 'True' }).Count`,
+    `$cat = (Get-NetConnectionProfile -ErrorAction SilentlyContinue | Select-Object -First 1).NetworkCategory`,
+    `Write-Output "$block|$allow|$port|$cat"`,
+  ].join('; ');
+  execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { timeout: 20000, windowsHide: true }, (err, out) => {
+    const m = /(\d+)\|(\d+)\|(\d+)\|(\w*)/.exec(String(out || ''));
+    if (err || !m) { firewall.status = 'unknown'; return; }
+    const [, block, allow, port, cat] = m;
+    firewall.network = cat;
+    firewall.status = Number(block) > 0 ? 'blocked' : Number(allow) > 0 || Number(port) > 0 ? 'ok' : 'blocked';
+    if (firewall.status === 'blocked') console.log('  ⚠ Windows Firewall is blocking phones from reaching this game.\n    Fix: double-click fix-firewall.cmd in this folder, click Yes, then rescan the QR code.\n');
+  });
 }
 
 function send(res, code, body, type = 'application/json') {
@@ -70,7 +95,7 @@ async function api(req, res, url) {
   const route = url.pathname;
   if (req.method === 'GET') {
     if (route === '/api/exists') return rooms.has(String(url.searchParams.get('code') || '').toUpperCase()) ? send(res, 200, { ok: true }) : send(res, 404, { error: 'gone' });
-    if (route === '/api/info') return send(res, 200, { urls: lanUrls().map((x) => x.url), names: lanUrls().map((x) => x.name), port: PORT });
+    if (route === '/api/info') return send(res, 200, { urls: lanUrls().map((x) => x.url), names: lanUrls().map((x) => x.name), port: PORT, firewall, windows: process.platform === 'win32' });
     if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, spotlight }) => ({ id, emoji, name, desc, live: !!spotlight })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
     if (route === '/api/qr') {
       const text = url.searchParams.get('text') || '';
@@ -140,7 +165,7 @@ const server = http.createServer(async (req, res) => {
     const file = PAGES[url.pathname] || path.normalize(url.pathname).replace(/^(\.\.[/\\])+/, '').replace(/^[/\\]+/, '');
     const full = path.join(PUBLIC, file);
     if (!full.startsWith(PUBLIC) || !fs.existsSync(full) || fs.statSync(full).isDirectory()) return send(res, 404, 'Not found', 'text/plain');
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(full)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(full)] || 'application/octet-stream', 'Cache-Control': full.endsWith('.woff2') ? 'public, max-age=604800' : 'no-cache' });
     fs.createReadStream(full).pipe(res);
   } catch (e) {
     if (e instanceof GameError) return send(res, 400, { error: e.message });
@@ -150,9 +175,15 @@ const server = http.createServer(async (req, res) => {
 });
 
 setInterval(sweepRooms, 3600_000).unref();
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') console.error(`\n  Port ${PORT} is already in use. Aux Wars is probably still running in another window.\n  Close that window (or press Ctrl+C in it) and run this again.\n`);
+  else console.error(e);
+  process.exit(1);
+});
 server.listen(PORT, '0.0.0.0', () => {
   console.log('\n  AUX WARS is running\n');
   console.log(`  Host screen:  http://localhost:${PORT}/host`);
-  for (const u of lanUrls()) console.log(`  On your Wi-Fi: ${u.url}  (${u.name})`);
+  for (const u of lanUrls()) console.log(`  Phones join:  ${u.url}  (${u.name})`);
   console.log('');
+  checkFirewall();
 });

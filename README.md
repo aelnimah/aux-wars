@@ -57,3 +57,13 @@ Host keys: **Space** = the big button, **P** = pause/resume auto-reveal, **M** =
 - Pulling updates: `git pull`, then `npm install` only if `package.json` changed.
 
 Rooms live in memory and expire after 24 hours; restarting the server ends all games.
+
+## Phones can't open the join link?
+
+A blank or black page on the phone almost always means the phone never reached the laptop.
+
+1. Put the phone on the same Wi-Fi as the laptop (not guest Wi-Fi, not mobile data).
+2. On Windows, double-click `fix-firewall.cmd` and choose Yes. It removes any "block" rule Windows made for Node and allows port 3000. Then restart the game.
+3. If the laptop has several network addresses, the lobby's "Phone shows a blank screen?" box lets you switch the QR code to another one.
+
+The lobby warns you when it detects that Windows Firewall is blocking phones.

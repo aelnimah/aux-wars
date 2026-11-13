@@ -1,20 +1,30 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f0c18">
 <title>Aux Wars</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎧%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="/style.css">
 </head><body>
 <main class="landing"><div>
-  <i class="mark"></i>
-  <h1 class="logo">AUX WARS</h1>
-  <p>Eight songs. One vote each. Last track standing wins the aux.</p>
+  <h1 class="logo">Aux Wars</h1>
+  <p class="tag">Eight songs. One vote each. The last track standing wins the aux.</p>
   <div class="row" id="resume"></div>
-  <div class="row"><a class="btn primary big" href="/host">🎧 Host a game</a></div>
-  <form class="join-form" id="f">
-    <input type="text" id="code" class="code-input" placeholder="ROOM CODE" maxlength="6" autocomplete="off" autocapitalize="characters">
-    <button class="btn big" type="submit">Join</button>
-  </form>
-  <hr>
-  <div class="steps"><div><b><span>1</span>Listen</b>Eight songs, revealed one by one with a preview.</div><div><b><span>2</span>Vote</b>Everyone picks a favorite on their phone.</div><div><b><span>3</span>Win the aux</b>Round winners go head to head in a knockout.</div></div>
+  <div class="doors">
+    <section class="door">
+      <h2>Host</h2>
+      <p>On the laptop that is plugged into the speakers.</p>
+      <a class="btn primary big" href="/host">Host a game</a>
+    </section>
+    <section class="door">
+      <h2>Join</h2>
+      <p>On your phone. The code is on the host’s screen.</p>
+      <form class="join-form" id="f">
+        <input type="text" id="code" class="code-input" placeholder="Room code" maxlength="6" autocomplete="off" autocapitalize="characters" aria-label="Room code">
+        <button class="btn big" type="submit">Join</button>
+      </form>
+      <p class="err hidden" id="joinerr"></p>
+    </section>
+  </div>
+  <div class="steps"><span>Listen to eight songs</span><span>Vote on your phone</span><span>Winners fight in a knockout</span></div>
 </div></main>
 <script>
   // offer to pick up where this device left off
@@ -23,11 +33,19 @@
     const exists = async (code) => { try { return (await fetch('/api/exists?code=' + encodeURIComponent(code))).ok; } catch { return false; } };
     const parse = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
     const host = parse('aux-host'), player = parse('aux-player');
-    if (host && await exists(host.code)) box.insertAdjacentHTML('beforeend', '<a class="btn big" href="/host">▶ Resume hosting ' + host.code + '</a>');
+    if (host && await exists(host.code)) box.insertAdjacentHTML('beforeend', '<a class="btn" href="/host">▶ Resume hosting room ' + host.code + '</a>');
     else if (host) localStorage.removeItem('aux-host');
-    if (player && await exists(player.code)) box.insertAdjacentHTML('beforeend', '<a class="btn big" href="/join?room=' + player.code + '">▶ Rejoin ' + player.code + ' as ' + player.name.replace(/[<>&"]/g, '') + '</a>');
+    if (player && await exists(player.code)) box.insertAdjacentHTML('beforeend', '<a class="btn" href="/join?room=' + player.code + '">▶ Rejoin room ' + player.code + ' as ' + String(player.name).replace(/[<>&"]/g, '') + '</a>');
     else if (player) localStorage.removeItem('aux-player');
   })();
-  document.getElementById('f').onsubmit = (e) => { e.preventDefault(); const c = document.getElementById('code').value.trim(); if (c) location.href = '/join?room=' + encodeURIComponent(c); };
+  document.getElementById('f').onsubmit = async (e) => {
+    e.preventDefault();
+    const c = document.getElementById('code').value.trim().toUpperCase(), box = document.getElementById('joinerr');
+    if (!c) { document.getElementById('code').focus(); return; }
+    // check the code here, so a typo is caught before leaving the page
+    let ok = true; try { ok = (await fetch('/api/exists?code=' + encodeURIComponent(c))).ok; } catch { /* let the join page report it */ }
+    if (!ok) { box.textContent = 'No game with code ' + c + '. Check the host’s screen.'; box.classList.remove('hidden'); return; }
+    location.href = '/join?room=' + encodeURIComponent(c);
+  };
 </script>
 </body></html>
