@@ -6,9 +6,7 @@ config.botDelay = [0, 5];
 config.introMs = 0;
 config.music = {
   async resolveTrack(artist, title) { return { preview: `https://x/${title}.mp3`, cover: `https://x/${title}.jpg` }; },
-  async chartTracks() { return []; },
-  async chartArtists() { return [{ id: 1, name: 'Fake Artist' }, { id: 2, name: 'Other Act' }]; },
-  async artistTop(a) { return Array.from({ length: 12 }, (_, i) => ({ artist: a.name, title: `${a.name} hit ${i}`, resolved: { preview: 'https://x/p.mp3', cover: null } })); },
+  async spotlightTracks(name) { return Array.from({ length: 12 }, (_, i) => ({ artist: name, title: `${name} hit ${i}`, resolved: { preview: 'https://x/p.mp3', cover: null } })); },
 };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const until = async (fn, ms = 3000) => { const t = Date.now(); while (!fn()) { if (Date.now() - t > ms) throw new Error('timeout'); await wait(5); } };
@@ -163,7 +161,7 @@ test('host can play too; Surprise mode mixes every theme incl. spotlight', async
   await hostAction(room, 'start');
   const questions = room.plan.map((r) => r.question);
   assert.ok(new Set(questions).size >= 14, 'themes rarely repeat: ' + questions.join(' | '));
-  assert.ok(questions.some((x) => /^Best (Fake Artist|Other Act) song\?$/.test(x)), 'spotlight rounds appear');
+  assert.ok(room.plan.some((r) => r.pack.id.startsWith('spot-')), 'spotlight rounds appear');
   await hostAction(room, 'openVoting');
   const token = viewFor(room, 'host').match.token;
   castVote(room, room.hostPid, token, room.match.songs[0].id);

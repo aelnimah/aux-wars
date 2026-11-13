@@ -190,3 +190,19 @@ button.optrow:active { transform: scale(.98); }
 .stickybar b { color: var(--text); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+/* ---------- round 2 polish ---------- */
+html.tv { font-size: clamp(16px, 1.15vw, 30px); }              /* scales the whole host UI up on big TVs */
+.screen { animation: screenIn .45s cubic-bezier(.2, .9, .2, 1) both; }
+@keyframes screenIn { from { opacity: 0; transform: translateY(14px); } }
+.host .topbar { padding-right: 200px; }
+.dock { top: 16px; }
+.chip.pl .dot { width: .65em; height: .65em; border-radius: 50%; background: hsl(var(--ph) 85% 62%); box-shadow: 0 0 10px hsl(var(--ph) 85% 62% / .6); flex: none; }
+.chip.pl.big { font-size: 1.1rem; padding: 10px 16px; }
+.chip.off { opacity: .45; }
+.cover { background-blend-mode: normal; }
+.cover::after { content: ''; position: absolute; inset: 0; background: repeating-radial-gradient(circle at 72% 28%, #ffffff12 0 2px, transparent 2px 16px); pointer-events: none; }
+.cover .initial { opacity: .85; }
+.cover img { z-index: 1; }
+.card.winner::before { content: ''; position: absolute; inset: -2px; border-radius: 24px; z-index: -1; background: radial-gradient(60% 60% at 50% 0, #2ee6a640, transparent); }
+.stage .heading h2 { text-wrap: balance; }

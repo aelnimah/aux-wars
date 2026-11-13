@@ -1,4 +1,4 @@
-import { $, esc, api, cover, connect, morph } from './shared.js';
+import { $, esc, api, cover, connect, morph, pchip, playerHue as hueOf } from './shared.js';
 
 const app = $('#app');
 let session = JSON.parse(localStorage.getItem('aux-host') || 'null'); // {code, key, hostPid}
@@ -101,7 +101,7 @@ function shellHtml() {
   return `<div class="topbar"><span class="logo">AUX WARS</span>${prog}<span class="roomtag">Room <b>${esc(s.code)}</b> · ${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}</span></div>
     ${blocked ? '<div class="banner" data-act="unmute">🔇 Your browser blocked sound. Click anywhere here to turn it on.</div>' : ''}
     ${err ? `<div class="err" style="margin-bottom:14px">${esc(err)}</div>` : ''}
-    ${body}`;
+    <div class="screen" data-key="${s.match && ['intro', 'reveal', 'voting', 'results'].includes(s.phase) ? 'm' + s.match.token : s.phase}">${body}</div>`;
 }
 
 function setupHtml() {
@@ -141,7 +141,7 @@ function lobbyHtml() {
       ${alt.length ? `<p class="note" style="margin-top:6px">QR not working? Try: ${alt.map((u) => `<a style="color:var(--accent2)" href="${esc(joinUrl(u))}" onclick="return false">${esc(u.replace('http://', ''))}</a>`).join(', ')}</p>` : ''}
       <button class="btn small" style="margin-top:12px" data-act="copy">📋 Copy join link</button></div>
     <div><h2>${s.players.length ? `${s.players.length} in the room` : 'Waiting for players…'}</h2>
-      <div class="players">${s.players.map((p) => `<span class="chip" data-key="${p.id}">${p.host ? '🎧 ' : ''}${esc(p.name)}${p.host ? '' : ` <button class="chip small x" data-act="kick" data-pid="${p.id}" title="Remove">✕</button>`}</span>`).join('') || '<span class="muted">Nobody yet. Scan the code!</span>'}</div>
+      <div class="players">${s.players.map((p) => `<span class="chip pl big ${p.online ? '' : 'off'}" data-key="${p.id}" style="--ph:${hueOf(p.name)}"><i class="dot"></i>${p.host ? '🎧 ' : ''}${esc(p.name)}${p.host ? '' : ` <button class="chip small x" data-act="kick" data-pid="${p.id}" title="Remove">✕</button>`}</span>`).join('') || '<span class="muted">Nobody yet. Scan the code!</span>'}</div>
       ${s.error ? `<div class="err" style="margin-bottom:16px">${esc(s.error)}</div>` : ''}
       <div class="row"><button class="btn primary big" data-act="start" ${s.players.length ? '' : 'disabled'}>Start game <kbd>Space</kbd></button>
         <button class="btn" data-act="bots">+ Add 3 test players 🤖</button></div>
@@ -171,15 +171,17 @@ function cardHtml(song, i, m, mode) {
   if (res) {
     const w = animKey === m.token ? res.pct : 0;
     result = `<div class="res"><div class="pct">${res.pct}%</div><div class="bar"><div data-w="${res.pct}" style="width:${w}%"></div></div>
-      <div class="voters">${res.voters.map((n) => `<span class="chip small">${esc(n)}</span>`).join('')}</div></div>`;
+      <div class="voters">${res.voters.map((n) => pchip(n, 'small')).join('')}</div></div>`;
   }
-  return `<div class="${cls}" data-key="${song.id}" ${s.phase !== 'results' ? `role="button" tabindex="0" data-act="replay" data-id="${song.id}" title="Replay this song"` : ''} style="animation-delay:${i * 60}ms">
+  return `<div class="${cls}" data-key="${song.id}" data-flip ${s.phase !== 'results' ? `role="button" tabindex="0" data-act="replay" data-id="${song.id}" title="Replay this song"` : ''} style="animation-delay:${i * 60}ms">
     ${hv}${badge}${cover(song)}<div class="meta"><div class="t">${eq}${esc(song.title)}</div><div class="a">${esc(song.artist)}</div>${from}${result}</div></div>`;
 }
 
 function matchHtml() {
   const m = s.match, versus = m.total === 2;
-  const cards = m.songs.map((x, i) => cardHtml(x, i, m)).join('');
+  // in results, rank by votes (stable), so the winner lands first and the rest slide into order
+  const ordered = s.phase === 'results' && m.result ? [...m.songs].sort((a, b) => m.result.tallies[b.id].n - m.result.tallies[a.id].n) : m.songs;
+  const cards = ordered.map((x, i) => cardHtml(x, i, m)).join('');
   let slots = '';
   if (s.phase === 'reveal') for (let i = m.songs.length; i < m.total; i++) slots += `<div class="card" data-key="slot-${m.token}-${i}"><div class="cover mystery">?</div><div class="meta"><div class="t">&nbsp;</div><div class="a">&nbsp;</div></div></div>`;
   const body = versus
@@ -195,9 +197,9 @@ function matchHtml() {
       ${s.settings.autoSeconds ? `<button class="btn" data-act="${s.paused ? 'resume' : 'pause'}">${s.paused ? '▶ Resume auto' : '⏸ Pause auto'}</button>` : ''}
       <span class="note">${s.paused ? 'Paused. ' : ''}Click any song to replay it.</span>`;
   } else if (s.phase === 'voting') {
-    const voted = s.players.filter((x) => x.voted).length, all = voted === s.players.length;
+    const voted = s.players.filter((x) => x.voted).length, all = s.players.filter((x) => x.online).every((x) => x.voted);
     controls = `<div class="votestatus"><span class="count">${all ? '✅ Everyone voted!' : `${voted}/${s.players.length} voted`}</span>
-      ${s.players.map((x) => `<span class="chip small ${x.voted ? 'voted' : ''}" data-key="${x.id}">${x.voted ? '✓ ' : ''}${esc(x.name)}</span>`).join('')}</div>
+      ${s.players.map((x) => pchip(x.name, `small ${x.voted ? 'voted' : ''} ${x.online ? '' : 'off'}`, x.id).replace('</span>', x.voted ? ' ✓</span>' : x.online ? '</span>' : ' · offline</span>')).join('')}</div>
       <span class="grow"></span>${m.deadline ? `<span class="timer" data-deadline="${m.deadline}">&nbsp;</span>` : ''}${big(all ? 'pulse' : '')}`;
   } else if (s.phase === 'results') {
     const r = m.result;

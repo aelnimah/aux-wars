@@ -8,6 +8,12 @@ export async function api(path, body) {
   return data;
 }
 
+// ---------- players ----------
+export const playerHue = (name) => { let h = 11; for (const c of String(name)) h = (h * 37 + c.charCodeAt(0)) % 360; return h; };
+/** A name chip with the player's own color dot, so people are recognizable at a glance. */
+export const pchip = (name, cls = '', key = '') =>
+  `<span class="chip pl ${cls}" ${key ? `data-key="${esc(key)}"` : ''} style="--ph:${playerHue(name)}"><i class="dot"></i>${esc(name)}</span>`;
+
 // ---------- artwork ----------
 const hue = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
 const badImgs = new Set(); // artwork URLs that failed to load; never retried, so no flicker
@@ -24,9 +30,18 @@ export function cover(song, extra = '') {
 // morph() instead updates the existing DOM in place so only real changes touch the page.
 // Give elements data-key to keep them matched across reorders.
 export function morph(root, html) {
+  // FLIP: remember where [data-flip] elements are, patch, then slide them from old to new position
+  const before = new Map();
+  root.querySelectorAll('[data-flip]').forEach((el) => before.set(el.dataset.key, el.getBoundingClientRect()));
   const t = document.createElement('template');
   t.innerHTML = html;
   patch(root, t.content);
+  root.querySelectorAll('[data-flip]').forEach((el) => {
+    const b = before.get(el.dataset.key);
+    if (!b) return;
+    const a = el.getBoundingClientRect(), dx = b.left - a.left, dy = b.top - a.top;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  });
 }
 
 const keyOf = (n) => (n.nodeType === 1 ? n.dataset.key : undefined);

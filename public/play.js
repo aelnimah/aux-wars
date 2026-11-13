@@ -1,4 +1,4 @@
-import { $, esc, api, cover, connect, morph } from './shared.js';
+import { $, esc, api, cover, connect, morph, pchip } from './shared.js';
 
 const app = $('#app');
 const params = new URLSearchParams(location.search);
@@ -34,7 +34,7 @@ function gameHtml() {
   switch (s.phase) {
     case 'lobby':
       body = `<div class="center"><div class="em">🎧</div><h2>You’re in, ${esc(s.me.name)}!</h2><p class="muted">Waiting for the host to start. Keep an eye on the big screen.</p>
-        <div class="players" style="justify-content:center">${s.players.map((p) => `<span class="chip" data-key="${p.id}">${esc(p.name)}</span>`).join('')}</div></div>`;
+        <div class="players" style="justify-content:center">${s.players.map((p) => pchip(p.name, '', p.id)).join('')}</div></div>`;
       break;
     case 'loading':
       body = `<div class="center"><div class="spinner"></div><h2>${esc(s.loading?.question || 'Loading…')}</h2><p class="muted">${esc(s.loading?.label || '')}</p></div>`;
@@ -60,7 +60,7 @@ function gameHtml() {
       const r = m.result, mine = s.me.vote;
       const msg = r.tie ? '🤝 Tie! Another vote is coming.' : mine === r.winnerId ? '🎉 Your pick won!' : mine ? 'Your pick lost this one.' : 'Results are in.';
       body = `<div class="heading"><small class="muted">${esc(m.label)}</small><h2>${msg}</h2></div><div style="height:16px"></div>
-        ${m.songs.map((x) => row(x, `${r.winnerId === x.id ? 'win' : ''} ${mine === x.id ? 'sel' : ''}`, { right: `<span class="pctn">${r.tallies[x.id].pct}%</span>` })).join('')}
+        ${[...m.songs].sort((p, q) => r.tallies[q.id].n - r.tallies[p.id].n).map((x) => row(x, `${r.winnerId === x.id ? 'win' : ''} ${mine === x.id ? 'sel' : ''}`, { right: `<span class="pctn">${r.tallies[x.id].pct}%</span>` })).join('')}
         ${bar('Watch the big screen')}`;
       break;
     }
@@ -69,8 +69,9 @@ function gameHtml() {
         <p class="muted" style="margin-top:10px">Waiting for the host to play again…</p></div>`;
       break;
   }
-  return `<div class="topbar"><span class="logo">AUX WARS</span><span class="progress">${esc(s.me.name)}${s.progress ? ` · ${s.progress.n}/${s.progress.of}` : ''}</span></div>
-    ${err ? `<div class="err" style="margin-bottom:12px">${esc(err)}</div>` : ''}${body}`;
+  const screen = m && ['intro', 'reveal', 'voting', 'results'].includes(s.phase) ? 'm' + m.token : s.phase;
+  return `<div class="topbar"><span class="logo">AUX WARS</span><span class="progress">${pchip(s.me.name, 'small')}${s.progress ? `<span>${s.progress.n}/${s.progress.of}</span>` : ''}</span></div>
+    ${err ? `<div class="err" style="margin-bottom:12px">${esc(err)}</div>` : ''}<div class="screen" data-key="${screen}">${body}</div>`;
 }
 
 function render() {

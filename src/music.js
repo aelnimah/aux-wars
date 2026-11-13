@@ -65,49 +65,22 @@ export const music = {
     return out;
   },
 
-  /** Top tracks for a Deezer genre chart (0 = all genres). Returns fully resolved songs. */
-  async chartTracks(genre) {
-    if (OFFLINE) return [];
-    const key = `chart:${genre}`;
-    const hit = cache.get(key);
-    if (hit && Date.now() - hit.at < 3600_000) return hit.songs;
-    try {
-      const j = await getJson(`https://api.deezer.com/chart/${genre}/tracks?limit=100`);
-      const songs = (j.data || [])
-        .filter((t) => t.preview)
-        .map((t) => ({ artist: t.artist?.name || 'Unknown', title: t.title_short || t.title, resolved: shape(t) }));
-      cache.set(key, { at: Date.now(), songs });
-      return songs;
-    } catch {
-      return [];
-    }
-  },
-
-  /** Random artists currently on Deezer's charts: [{id, name}]. */
-  async chartArtists() {
-    if (OFFLINE) return [];
-    const hit = cache.get('chart-artists');
-    if (hit && Date.now() - hit.at < 3600_000) return hit.list;
-    try {
-      // rap, pop and R&B charts so spotlight rounds stay in the lane
-      const lists = await Promise.all([116, 132, 165].map((g) => getJson(`https://api.deezer.com/chart/${g}/artists?limit=40`).catch(() => ({ data: [] }))));
-      const seen = new Set(), list = [];
-      for (const j of lists) for (const a of j.data || []) if (!seen.has(a.id)) { seen.add(a.id); list.push({ id: a.id, name: a.name }); }
-      if (list.length) cache.set('chart-artists', { at: Date.now(), list });
-      return list;
-    } catch {
-      return [];
-    }
-  },
-
-  /** An artist's top tracks with previews, as resolved songs. */
-  async artistTop(artist) {
+  /** An artist's best-known songs (with previews), found by name. Returns resolved songs. */
+  async spotlightTracks(name) {
     if (OFFLINE) return [];
     try {
-      const j = await getJson(`https://api.deezer.com/artist/${artist.id}/top?limit=40`);
+      const k = `artist:${norm(name)}`;
+      let id = cache.get(k);
+      if (!id) {
+        const j = await getJson(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=3`);
+        const hit = (j.data || []).find((a) => norm(a.name) === norm(name)) || (j.data || [])[0];
+        if (!hit) return [];
+        id = hit.id; cache.set(k, id);
+      }
+      const j = await getJson(`https://api.deezer.com/artist/${id}/top?limit=40`);
       return (j.data || [])
         .filter((t) => t.preview)
-        .map((t) => ({ artist: artist.name, title: t.title_short || t.title, resolved: shape(t) }));
+        .map((t) => ({ artist: name, title: t.title_short || t.title, resolved: shape(t) }));
     } catch {
       return [];
     }

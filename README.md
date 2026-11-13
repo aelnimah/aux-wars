@@ -37,8 +37,7 @@ Host keys: **Space** = the big button, **P** = pause/resume auto-reveal, **M** =
 
 - **Themes** (`src/packs.js`) are 31 curated lists with a question each: hip-hop, R&B, pop, Afrobeats, dancehall, Latin, plus classics (Whitney, Michael Jackson, 80s, disco, karaoke). Rock, metal, country and EDM are deliberately left out. Add your own: it's one line per song (`Artist - Title`).
 - **Surprise me** mixes all themes at random, so every game is different and themes don't repeat.
-- **Artist Spotlight** picks random artists from the live charts: "Best <artist> song?".
-- **Live charts** pull Deezer's current top tracks per genre, so those rounds are different every time.
+- **Artist Spotlight** picks a few random artists from a list in `src/packs.js` ("Best Drake song?") and pulls their best-known songs. Established artists only; there is no "current charts" content.
 - **Previews and artwork** come from Deezer's free public API (no account or key). Songs Deezer can't find fall back to Apple's iTunes Search API (also keyless, but limited to ~20 requests/minute, so it's only used for misses). If Deezer can't be reached, the game still works:
   songs just show colored cards and have no audio (the host can play them from another app).
 

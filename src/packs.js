@@ -1,6 +1,6 @@
 // Round themes. Each pack is a question the room answers ("Best pregame song?")
 // plus a pool of songs. Songs are resolved to previews + artwork at game time.
-// Chart packs pull live from Deezer's charts instead of a fixed list.
+// The Artist Spotlight pack builds rounds on the fly from SPOTLIGHT_ARTISTS (best songs by one artist).
 
 const L = (s) => s.trim().split('\n').map((l) => l.split(' - ')).map(([artist, ...t]) => [artist.trim(), t.join(' - ').trim()]);
 
@@ -745,16 +745,28 @@ Chingy - Right Thurr
 Sean Kingston - Beautiful Girls
 Cupid - Cupid Shuffle`),
   },
-  // Live Deezer charts: always fresh, wide open.
-  { id: 'spotlight', emoji: '🎯', name: 'Artist Spotlight (live)', spotlight: true, desc: 'A random chart artist: best song by them?' },
-  { id: 'chart-rap', emoji: '📈', name: 'Rap Charts (live)', question: 'Best rap song on the charts?', desc: 'Current hip-hop top tracks', chart: 116 },
-  { id: 'chart-pop', emoji: '📈', name: 'Pop Charts (live)', question: 'Best pop song on the charts?', desc: 'Current pop top tracks', chart: 132 },
-  { id: 'chart-rnb', emoji: '📈', name: 'R&B Charts (live)', question: 'Best R&B song on the charts?', desc: 'Current R&B top tracks', chart: 165 },
+  // Random-artist rounds: "Best Drake song?". Artists come from SPOTLIGHT_ARTISTS below.
+  { id: 'spotlight', emoji: '🎯', name: 'Artist Spotlight', spotlight: true, desc: 'A random artist from the list below: best song by them?' },
 ];
 
 export const packById = (id) => PACKS.find((p) => p.id === id);
-export const FIXED_PACKS = PACKS.filter((p) => !p.chart && !p.spotlight).map((p) => p.id);
+export const FIXED_PACKS = PACKS.filter((p) => !p.spotlight).map((p) => p.id);
 export const ALL_PACKS = PACKS.map((p) => p.id); // 'Surprise me' draws from everything
 export const DEFAULT_PACKS = FIXED_PACKS;
 
 export const hueOf = (id) => { let h = 7; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+
+// Established artists only (no brand-new chart acts). Add or remove names freely.
+export const SPOTLIGHT_ARTISTS = [
+  'Drake', 'Kanye West', 'Kendrick Lamar', 'J. Cole', 'Travis Scott', 'JAY-Z', 'Eminem', '50 Cent', 'Nicki Minaj', 'Cardi B',
+  'Lil Wayne', 'Snoop Dogg', 'Nas', 'OutKast', 'Tyler, The Creator', 'A$AP Rocky', 'Future', 'Migos', 'Megan Thee Stallion',
+  'Missy Elliott', '2Pac', 'The Notorious B.I.G.', 'Dr. Dre', 'Ludacris', 'Nelly', 'Lil Baby', '21 Savage', 'Post Malone',
+  'Juice WRLD', 'Mac Miller', 'Kid Cudi', 'Beyoncé', 'Rihanna', 'Usher', 'Alicia Keys', 'Chris Brown', 'The Weeknd', 'SZA',
+  'Frank Ocean', 'Bruno Mars', 'Mary J. Blige', 'Aaliyah', 'Brandy', 'Ne-Yo', 'Whitney Houston', 'Mariah Carey', 'Stevie Wonder',
+  'Marvin Gaye', 'Sade', 'Jhené Aiko', 'Summer Walker', 'Khalid', 'Daniel Caesar', 'Janet Jackson', "Destiny's Child", 'Boyz II Men',
+  'Michael Jackson', 'Prince', 'Madonna', 'Taylor Swift', 'Ariana Grande', 'Dua Lipa', 'Billie Eilish', 'Justin Timberlake',
+  'Britney Spears', 'Lady Gaga', 'Katy Perry', 'Adele', 'Ed Sheeran', 'Justin Bieber', 'Harry Styles', 'Doja Cat', 'Lizzo',
+  'Selena Gomez', 'Miley Cyrus', 'Elton John', 'ABBA', 'Backstreet Boys', 'Burna Boy', 'Wizkid', 'Davido', 'Rema', 'Tems',
+  'Asake', 'Ayra Starr', 'Tiwa Savage', 'Fireboy DML', 'Omah Lay', 'Tyla', 'Sean Paul', 'Shaggy', 'Bob Marley & The Wailers',
+  'Bad Bunny', 'Shakira', 'J Balvin', 'Daddy Yankee', 'Karol G', 'Enrique Iglesias',
+];

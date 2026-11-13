@@ -60,7 +60,7 @@ async function api(req, res, url) {
   if (req.method === 'GET') {
     if (route === '/api/exists') return rooms.has(String(url.searchParams.get('code') || '').toUpperCase()) ? send(res, 200, { ok: true }) : send(res, 404, { error: 'gone' });
     if (route === '/api/info') return send(res, 200, { urls: lanUrls(), port: PORT });
-    if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, chart, spotlight }) => ({ id, emoji, name, desc, live: chart !== undefined || !!spotlight })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
+    if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, spotlight }) => ({ id, emoji, name, desc, live: !!spotlight })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
     if (route === '/api/qr') {
       const text = url.searchParams.get('text') || '';
       if (!text || text.length > 300) return send(res, 400, { error: 'bad text' });
@@ -77,9 +77,15 @@ async function api(req, res, url) {
       const l = { res, role, pid };
       if (!listeners.has(room.code)) listeners.set(room.code, new Set());
       listeners.get(room.code).add(l);
+      if (role === 'player') { (room.online ||= new Set()).add(pid); room.notify?.(); }
       res.write(`data: ${JSON.stringify(viewFor(room, role, pid))}\n\n`);
       const ping = setInterval(() => res.write(': ping\n\n'), 20000);
-      req.on('close', () => { clearInterval(ping); listeners.get(room.code)?.delete(l); });
+      req.on('close', () => {
+        clearInterval(ping);
+        listeners.get(room.code)?.delete(l);
+        // a phone counts as offline once its last connection drops
+        if (role === 'player' && ![...(listeners.get(room.code) || [])].some((x) => x.pid === pid)) { room.online?.delete(pid); room.notify?.(); }
+      });
       return;
     }
     return send(res, 404, { error: 'Not found' });

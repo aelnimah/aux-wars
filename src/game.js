@@ -7,7 +7,7 @@
 // the game; one changeable vote per player; stale votes (old round / old tiebreak) are rejected.
 
 import crypto from 'node:crypto';
-import { packById, FIXED_PACKS, ALL_PACKS, hueOf } from './packs.js';
+import { packById, FIXED_PACKS, ALL_PACKS, SPOTLIGHT_ARTISTS, hueOf } from './packs.js';
 import { music as defaultMusic } from './music.js';
 
 export class GameError extends Error {}
@@ -119,23 +119,19 @@ async function planGame(room) {
   for (const id of packs) {
     const pack = packById(id);
     if (pack.spotlight) {
-      // a few random chart artists, each its own "Best <artist> song?" round
-      const artists = shuffle(await config.music.chartArtists()).slice(0, 12);
+      // a few random artists, each its own "Best <artist> song?" round
       let made = 0;
-      for (const a of artists) {
+      for (const name of shuffle(SPOTLIGHT_ARTISTS).slice(0, 10)) {
         if (made >= 3) break;
-        const tracks = await config.music.artistTop(a);
+        const tracks = await config.music.spotlightTracks(name);
         if (tracks.length >= ROUND_SIZE) {
-          pools.push({ pack: { id: `spot-${a.id}`, emoji: '🎯', question: `Best ${a.name} song?` }, specs: shuffle(tracks) });
+          pools.push({ pack: { id: `spot-${name}`, emoji: '🎯', question: `Best ${name} song?` }, specs: shuffle(tracks) });
           made++;
         }
       }
       continue;
     }
-    let specs;
-    if (pack.chart !== undefined) {
-      specs = (await config.music.chartTracks(pack.chart)).map((s) => ({ ...s }));
-    } else specs = pack.songs.map(([artist, title]) => ({ artist, title }));
+    const specs = pack.songs.map(([artist, title]) => ({ artist, title }));
     if (specs.length >= 4) pools.push({ pack, specs: shuffle(specs) });
   }
   if (!pools.length) fail('No songs available. Check your connection or pick other themes.');
@@ -514,7 +510,7 @@ export function viewFor(room, role, pid) {
   const v = {
     code: room.code, phase: room.phase, settings: room.settings, error: room.error, loading: room.loading,
     paused: room.paused,
-    players: [...room.players.values()].map((p) => ({ id: p.id, name: p.name, bot: p.bot, host: p.host, voted: room.phase === 'voting' && !!m?.votes[p.id] })),
+    players: [...room.players.values()].map((p) => ({ id: p.id, name: p.name, bot: p.bot, host: p.host, online: p.bot || p.host || !room.online || room.online.has(p.id), voted: room.phase === 'voting' && !!m?.votes[p.id] })),
     progress: room.phase === 'lobby' ? null : { n: Math.min(matchNumber(room), totalMatches(room.settings.qualifiers)), of: totalMatches(room.settings.qualifiers) },
   };
   if (host && room.hostPid) v.hostPlayer = { id: room.hostPid, vote: m?.votes[room.hostPid] ?? null };
