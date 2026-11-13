@@ -29,7 +29,11 @@ async function getJson(url, ms = 7000) {
   }
 }
 
-const ALT = /\b(live|remix|karaoke|instrumental|acoustic|cover|tribute|sped up|slowed|re-?recorded|version|edit|mix)\b/i;
+// Never substitute these for the original recording.
+const HARD = /\b(live|remix|remixed|rmx|karaoke|instrumental|acoustic|cover|tribute|sped up|slowed|nightcore|re-?recorded|rerecorded|mashup|bootleg|demo|a ?cappella|made famous|in the style of)\b/i;
+// Fine as a second choice: same recording, different cut.
+const SOFT = /\b(version|edit|mix|remaster(ed)?|mono|stereo|single|club|extended|deluxe)\b/i;
+const ALT = HARD;
 const shape = (hit) => ({
   name: `${hit.artist?.name || ''} - ${hit.title || ''}`, // what was actually matched, for the audit page
   rank: Number(hit.rank) || 0, // Deezer popularity; higher = more widely known
@@ -55,11 +59,21 @@ async function itunesLookup(artist, title) {
   if (slot > Date.now()) await new Promise((r) => setTimeout(r, slot - Date.now()));
   const j = await getJson(`https://itunes.apple.com/search?term=${encodeURIComponent(`${artist} ${title}`)}&media=music&entity=song&limit=5`);
   const ok = (j.results || []).filter((r) => r.previewUrl && artistMatches(artist, { artist: { name: r.artistName } }) && titleMatches(title, r.trackName));
-  const hit = ok.find((r) => !ALT.test(`${r.trackName} ${r.collectionName || ''}`) || ALT.test(title)) || ok[0];
+  const usable = ok.filter((r) => !HARD.test(r.trackName) || HARD.test(title));
+  const hit = usable.find((r) => !HARD.test(r.collectionName || '') && !SOFT.test(r.trackName)) || usable[0];
   return hit ? { name: `${hit.artistName} - ${hit.trackName} (iTunes)`, rank: 0, preview: hit.previewUrl, cover: hit.artworkUrl100 ? hit.artworkUrl100.replace('100x100', '600x600') : null } : null;
 }
 
 export const music = {
+  /** Debug: every candidate the music source returns for a song. */
+  async candidates(artist, title) {
+    const out = [];
+    for (const q of [`artist:"${artist}" track:"${title}"`, `${artist} ${title}`]) {
+      const j = await getJson(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=12`).catch((e) => ({ error: String(e) }));
+      out.push({ q, total: j.total, error: j.error, hits: (j.data || []).map((h) => `${h.artist?.name} - ${h.title} | album: ${h.album?.title} | rank ${h.rank} | preview ${h.preview ? 'yes' : 'NO'} | readable ${h.readable}`) });
+    }
+    return out;
+  },
   /** Look up one song by artist + title. Returns {preview, cover} or null. */
   async resolveTrack(artist, title) {
     if (OFFLINE) return null;
@@ -69,9 +83,12 @@ export const music = {
     try {
       // Prefer the original recording: the best-known match that isn't a live cut, remix, cover or karaoke take.
       const pick = (list) => {
-        const ok = (list || []).filter((h) => h.preview && artistMatches(artist, h) && titleMatches(title, h.title_short || h.title));
-        const clean = ok.filter((h) => !ALT.test(`${h.title || ''} ${h.album?.title || ''}`) || ALT.test(title));
-        return (clean.length ? clean : ok).sort((x, y) => (y.rank || 0) - (x.rank || 0))[0] || null;
+        const label = (h) => `${h.title || ''} ${h.title_version || ''}`;
+        const ok = (list || []).filter((h) => h.preview && artistMatches(artist, h) && titleMatches(title, h.title_short || h.title))
+          .filter((h) => !HARD.test(label(h)) || HARD.test(title));
+        const byRank = (x, y) => (y.rank || 0) - (x.rank || 0);
+        const plain = ok.filter((h) => !SOFT.test(label(h)) && !HARD.test(h.album?.title || ''));
+        return (plain.length ? plain : ok).sort(byRank)[0] || null;
       };
       const strict = `artist:"${artist}" track:"${title}"`;
       let j = await getJson(`https://api.deezer.com/search?q=${encodeURIComponent(strict)}&limit=8`);

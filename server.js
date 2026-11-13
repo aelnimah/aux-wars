@@ -98,6 +98,7 @@ async function api(req, res, url) {
     if (route === '/api/exists') return rooms.has(String(url.searchParams.get('code') || '').toUpperCase()) ? send(res, 200, { ok: true }) : send(res, 404, { error: 'gone' });
     if (route === '/api/info') return send(res, 200, { urls: lanUrls().map((x) => x.url), names: lanUrls().map((x) => x.name), port: PORT, firewall, windows: process.platform === 'win32' });
     if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, spotlight }) => ({ id, emoji, name, desc, live: !!spotlight })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
+    if (route === '/api/candidates') return send(res, 200, await music.candidates(url.searchParams.get('artist') || '', url.searchParams.get('title') || ''));
     if (route === '/api/audit') { // what does the music source return for every song in a theme?
       const pack = packById(url.searchParams.get('pack'));
       if (!pack || pack.spotlight) return send(res, 400, { error: 'Unknown theme' });
