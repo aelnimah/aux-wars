@@ -770,8 +770,6 @@ Lou Bega - Mambo No. 5 (A Little Bit of...)
 Haddaway - What Is Love
 Natalie Imbruglia - Torn
 Gotye - Somebody That I Used To Know
-Chingy - Right Thurr
-Sean Kingston - Beautiful Girls
 Cupid - Cupid Shuffle
 Silentó - Watch Me (Whip / Nae Nae)
 Rob Base & DJ EZ Rock - It Takes Two
@@ -779,9 +777,16 @@ MIMS - This Is Why I'm Hot
 J-Kwon - Tipsy
 Daniel Powter - Bad Day
 Afroman - Because I Got High
-Carly Rae Jepsen - Call Me Maybe
 Desiigner - Panda
-PSY - Gangnam Style`),
+PSY - Gangnam Style
+Chumbawamba - Tubthumping
+Bobby McFerrin - Don't Worry Be Happy
+Toni Basil - Mickey
+Ylvis - The Fox (What Does the Fox Say?)
+Baauer - Harlem Shake
+Cali Swag District - Teach Me How to Dougie
+V.I.C. - Wobble
+DJ Casper - Cha Cha Slide`),
   },
   {
     id: 'soul', emoji: '☀️', name: 'Soul Classics', question: 'Best soul classic?', desc: 'The songs your parents were right about',
