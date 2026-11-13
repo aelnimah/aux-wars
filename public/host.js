@@ -60,7 +60,10 @@ function estimate() {
   return Math.max(5, Math.round((qual + ko) / 60 / 5) * 5);
 }
 let addrIdx = 0;
-const joinUrl = (base = info.urls[addrIdx] || info.urls[0] || location.origin) => `${base}/join?room=${s.code}`;
+// Opened on this computer (localhost): phones need the Wi-Fi address. Opened from a web address: that same address works for everyone.
+const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+const online = !local && !/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/.test(location.hostname);
+const joinUrl = (base = local ? info.urls[addrIdx] || info.urls[0] || location.origin : location.origin) => `${base}/join?room=${s.code}`;
 
 // Small groups tie constantly, so after one tiebreak (or a big tie in a small room) a random draw is the sensible default.
 const preferDraw = (m) => m.tieCount >= 1 || (m.result.tiedIds.length >= 3 && s.players.length <= 4);
@@ -146,13 +149,14 @@ function lobbyHtml() {
     info.windows ? `${blockedFw ? '<b>Windows Firewall is blocking phones right now.</b> ' : ''}In the game’s folder, double-click <code>fix-firewall.cmd</code> and choose Yes. Then restart the game.` : '',
     info.urls.length > 1 ? `This computer has ${info.urls.length} network addresses. If the code doesn’t open, try another one:<div class="addrs">${info.urls.map((u, i) => `<button class="chip small ${i === addrIdx ? 'on' : ''}" data-act="addr" data-i="${i}">${esc(u.replace('http://', ''))}${info.names?.[i] ? ` (${esc(info.names[i])})` : ''}</button>`).join('')}</div>` : '',
   ].filter(Boolean);
+  const helpBox = online ? '' : `<div class="help ${blockedFw ? 'warn' : ''}"><button data-act="help"><span>${blockedFw ? 'Phones are being blocked' : 'Phone shows a blank screen?'}</span><span>${open ? '−' : '+'}</span></button>
+        ${open ? `<ol>${steps.map((x) => `<li>${x}</li>`).join('')}</ol>` : ''}</div>`;
   return `<div class="lobby">
     <div><div class="ticket"><div class="qr"><img alt="QR code to join" src="/api/qr?text=${encodeURIComponent(url)}"></div>
         <small>Scan to join, or enter code</small><div class="roomcode">${esc(s.code)}</div></div>
-      <div class="joinurl"><small>Or open this on a phone</small>${info.urls.length ? esc(url.replace('http://', '')) : 'No network found. Connect this computer to Wi-Fi.'}</div>
+      <div class="joinurl"><small>${online ? 'Anyone with this link can join, from anywhere' : 'Or open this on a phone'}</small>${online || info.urls.length ? esc(url.replace(/^https?:\/\//, '')) : 'No network found. Connect this computer to Wi-Fi.'}</div>
       <button class="btn small" style="margin-top:12px" data-act="copy">${copied ? 'Copied' : 'Copy join link'}</button>
-      <div class="help ${blockedFw ? 'warn' : ''}"><button data-act="help"><span>${blockedFw ? 'Phones are being blocked' : 'Phone shows a blank screen?'}</span><span>${open ? '−' : '+'}</span></button>
-        ${open ? `<ol>${steps.map((x) => `<li>${x}</li>`).join('')}</ol>` : ''}</div></div>
+      ${helpBox}</div>
     <div><h2>${n ? `${n} in the room` : 'Waiting for players'}</h2>
       <div class="players">${s.players.map((p) => `<span class="chip pl big ${p.online ? '' : 'off'}" data-key="${p.id}" style="--ph:${hueOf(p.name)}"><i class="dot"></i>${p.host ? '🎧 ' : ''}${esc(p.name)}${p.host ? '' : ` <button class="chip small x" data-act="kick" data-pid="${p.id}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}">✕</button>`}</span>`).join('') || '<span class="muted">Nobody yet. Scan the code with a phone camera.</span>'}</div>
       ${s.error ? `<div class="err" style="margin-bottom:16px">${esc(s.error)}</div>` : ''}
@@ -328,6 +332,9 @@ function open() {
     notice = 'That game has ended or the server restarted. Start a new one!'; render();
   }, session.code);
 }
+
+// A free web host sleeps when nobody talks to it; a small check-in keeps the room alive during a game.
+setInterval(() => { if (session) fetch(`/api/exists?code=${session.code}`).catch(() => {}); }, 4 * 60 * 1000);
 
 // live countdowns without re-rendering the page
 setInterval(() => {

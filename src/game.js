@@ -36,6 +36,7 @@ export const totalMatches = (q) => q + (q - 1);
 // ---------- rooms & players ----------
 
 export function createRoom(input = {}) {
+  if (rooms.size >= 300) fail('Too many games are running right now. Try again in a few minutes.');
   const q = Number(input.qualifiers) || 8;
   if (!QUALIFIER_OPTIONS.includes(q)) fail('Pick 4, 8 or 16 qualifying rounds.');
   const auto = Number(input.autoSeconds ?? 12);

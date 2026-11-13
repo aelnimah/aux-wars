@@ -1,0 +1,10 @@
+# One-click hosting on Render (render.com): New > Blueprint > pick this repo.
+services:
+  - type: web
+    name: aux-wars
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/info
+    autoDeploy: true

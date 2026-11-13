@@ -67,3 +67,13 @@ A blank or black page on the phone almost always means the phone never reached t
 3. If the laptop has several network addresses, the lobby's "Phone shows a blank screen?" box lets you switch the QR code to another one.
 
 The lobby warns you when it detects that Windows Firewall is blocking phones.
+
+## Play from anywhere (no shared Wi-Fi)
+
+Put the game on the internet once, then use that link every time. Anyone with the link or QR code can join from any network.
+
+1. Sign in at render.com with your GitHub account (free, no card).
+2. New > Blueprint > choose the `aux-wars` repo > Apply. Render reads `render.yaml` and builds it.
+3. Open the address Render gives you (like `https://aux-wars.onrender.com`). Host there; the QR code now points at that address.
+
+On the free plan the site sleeps when unused, so the first visit can take about a minute to wake up. Games live in memory: if the site restarts, running games end.
