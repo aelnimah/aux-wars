@@ -19,6 +19,7 @@ async function getJson(url, ms = 7000) {
 }
 
 const shape = (hit) => ({
+  rank: Number(hit.rank) || 0, // Deezer popularity; higher = more widely known
   preview: hit.preview || null,
   cover: hit.album?.cover_big || hit.album?.cover_medium || null,
 });

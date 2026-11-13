@@ -119,6 +119,8 @@ export function addBots(room, count = 3) {
 
 // ---------- planning ----------
 
+const EXTRA = 3; // extra candidates per round, so the least-known can be dropped
+
 async function planGame(room) {
   const { qualifiers: q, packs } = room.settings;
   const pools = [];
@@ -158,12 +160,12 @@ async function planGame(room) {
   const plan = [];
   for (let i = 0; i < q; i++) {
     const pool = order[i % order.length];
-    const specs = take(pool, ROUND_SIZE);
+    const specs = take(pool, ROUND_SIZE + EXTRA);
     // top up from the fullest other pools if this theme ran dry
-    while (specs.length < ROUND_SIZE) {
+    while (specs.length < ROUND_SIZE + EXTRA) {
       const other = [...order].sort((a, b) => b.specs.length - a.specs.length)[0];
       if (!other || !other.specs.length) break;
-      specs.push(...take(other, ROUND_SIZE - specs.length));
+      specs.push(...take(other, ROUND_SIZE + EXTRA - specs.length));
     }
     if (specs.length < ROUND_SIZE) fail(`Not enough songs for ${q} rounds. Pick more themes or fewer rounds.`);
     plan.push({ pack: pool.pack, question: pool.pack.question, specs: shuffle(specs) });
@@ -173,18 +175,20 @@ async function planGame(room) {
 
 async function resolveRound(room, i) {
   const { specs } = room.plan[i];
-  const songs = specs.map((s) => ({ id: `s${i}_${rid().slice(0, 4)}`, title: s.title, artist: s.artist, cover: null, preview: null }));
+  const all = specs.map((s) => ({ id: `s${i}_${rid().slice(0, 4)}`, title: s.title, artist: s.artist, cover: null, preview: null, rank: -1 }));
   const queue = specs.map((s, idx) => idx);
   const worker = async () => {
     while (queue.length) {
       const idx = queue.shift();
       const spec = specs[idx];
       const r = spec.resolved || (await config.music.resolveTrack(spec.artist, spec.title)) || (await config.music.resolveTrack(spec.artist, spec.title));
-      if (r) { songs[idx].cover = r.cover || null; songs[idx].preview = r.preview || null; }
+      if (r) { all[idx].cover = r.cover || null; all[idx].preview = r.preview || null; all[idx].rank = r.rank ?? 0; }
     }
   };
   await Promise.all([worker(), worker(), worker()]);
-  return songs;
+  // A few extra candidates are looked up so we can keep the best-known ones (Deezer popularity rank).
+  const keep = all.map((s, idx) => ({ s, idx })).sort((a, b) => b.s.rank - a.s.rank || a.idx - b.idx).slice(0, ROUND_SIZE);
+  return keep.sort((a, b) => a.idx - b.idx).map(({ s }) => { delete s.rank; return s; });
 }
 const roundSongs = (room, i) => (room.roundPromises[i] ||= resolveRound(room, i));
 

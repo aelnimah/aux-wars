@@ -5,7 +5,7 @@ Music party game: host screen on a laptop, voting on phones. Plain Node (no fram
 ## Map
 - `server.js`: HTTP routes, SSE broadcast, host auth. Keep it thin.
 - `src/game.js`: engine and per-role views (`viewFor`). All game rules live here.
-- `src/packs.js`: themed song pools and live chart packs. `src/music.js`: Deezer lookups (previews/artwork), always optional.
+- `src/packs.js`: themed song pools (no chart/current content). `src/music.js`: Deezer lookups (previews/artwork), always optional.
 - `public/host.js`, `public/play.js`, `public/shared.js`, `public/style.css`: the two screens.
 
 ## Commands

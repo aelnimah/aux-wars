@@ -756,7 +756,7 @@ export const DEFAULT_PACKS = FIXED_PACKS;
 
 export const hueOf = (id) => { let h = 7; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
 
-// Established artists only (no brand-new chart acts). Add or remove names freely.
+// Established artists only (no brand-new acts). Add or remove names freely.
 export const SPOTLIGHT_ARTISTS = [
   'Drake', 'Kanye West', 'Kendrick Lamar', 'J. Cole', 'Travis Scott', 'JAY-Z', 'Eminem', '50 Cent', 'Nicki Minaj', 'Cardi B',
   'Lil Wayne', 'Snoop Dogg', 'Nas', 'OutKast', 'Tyler, The Creator', 'A$AP Rocky', 'Future', 'Migos', 'Megan Thee Stallion',
