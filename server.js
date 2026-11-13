@@ -5,7 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import QRCode from 'qrcode';
-import { PACKS } from './src/packs.js';
+import { PACKS, packById } from './src/packs.js';
+import { music } from './src/music.js';
 import { rooms, createRoom, addPlayer, castVote, hostAction, closeRoom, viewFor, sweepRooms, GameError, QUALIFIER_OPTIONS, totalMatches } from './src/game.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -66,7 +67,7 @@ function send(res, code, body, type = 'application/json') {
 
 async function readBody(req) {
   let size = 0; const chunks = [];
-  for await (const c of req) { size += c.length; if (size > 20_000) throw new GameError('Request too large.'); chunks.push(c); }
+  for await (const c of req) { size += c.length; if (size > 80_000) throw new GameError('Request too large.'); chunks.push(c); }
   try { return JSON.parse(Buffer.concat(chunks).toString() || '{}'); } catch { throw new GameError('Bad request.'); }
 }
 
@@ -97,6 +98,13 @@ async function api(req, res, url) {
     if (route === '/api/exists') return rooms.has(String(url.searchParams.get('code') || '').toUpperCase()) ? send(res, 200, { ok: true }) : send(res, 404, { error: 'gone' });
     if (route === '/api/info') return send(res, 200, { urls: lanUrls().map((x) => x.url), names: lanUrls().map((x) => x.name), port: PORT, firewall, windows: process.platform === 'win32' });
     if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, spotlight }) => ({ id, emoji, name, desc, live: !!spotlight })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
+    if (route === '/api/sample') { // health check for the music source: what would this theme pull right now?
+      const pack = packById(url.searchParams.get('pack') || 'afro');
+      if (!pack || pack.spotlight) return send(res, 400, { error: 'Unknown theme' });
+      const curated = await Promise.all(pack.songs.slice(0, 4).map(async ([artist, title]) => ({ artist, title, ...(await music.resolveTrack(artist, title)) })));
+      const fresh = await Promise.all((pack.fresh || []).slice(0, 4).map(async (n) => ({ artist: n, top: (await music.spotlightTracks(n)).slice(0, 6).map((t) => `${t.title} (${t.resolved.rank})`) })));
+      return send(res, 200, { theme: pack.question, curated: curated.map((c) => ({ artist: c.artist, title: c.title, found: !!c.preview, rank: c.rank ?? null })), fresh });
+    }
     if (route === '/api/qr') {
       const text = url.searchParams.get('text') || '';
       if (!text || text.length > 300) return send(res, 400, { error: 'bad text' });

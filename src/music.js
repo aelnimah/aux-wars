@@ -3,7 +3,14 @@
 // songs just have no preview audio / artwork.
 
 const OFFLINE = process.env.AUXWARS_OFFLINE === '1';
-const cache = new Map();
+// Deezer preview links expire after a few hours, so nothing is remembered longer than that.
+const TTL = 3 * 60 * 60 * 1000;
+const store = new Map();
+const cache = {
+  has(k) { const e = store.get(k); if (e && Date.now() - e.at < TTL) return true; store.delete(k); return false; },
+  get(k) { return this.has(k) ? store.get(k).v : undefined; },
+  set(k, v) { if (store.size > 5000) store.clear(); store.set(k, { v, at: Date.now() }); },
+};
 const norm = (s) => String(s).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, ' ').trim();
 
 async function getJson(url, ms = 7000) {
@@ -85,14 +92,18 @@ export const music = {
         if (!hit) return [];
         id = hit.id; cache.set(k, id);
       }
+      const tk = `top:${id}`;
+      if (cache.has(tk)) return cache.get(tk);
       const j = await getJson(`https://api.deezer.com/artist/${id}/top?limit=40`);
       // best-known first, one entry per song (no remixes or live doubles)
       const seen = new Set();
-      return (j.data || [])
+      const out = (j.data || [])
         .filter((t) => t.preview && !ALT.test(t.title || ''))
         .sort((x, y) => (y.rank || 0) - (x.rank || 0))
         .filter((t) => { const k = norm(t.title_short || t.title); if (seen.has(k)) return false; seen.add(k); return true; })
         .map((t) => ({ artist: name, title: t.title_short || t.title, resolved: shape(t) }));
+      if (out.length) cache.set(tk, out);
+      return out;
     } catch {
       return [];
     }

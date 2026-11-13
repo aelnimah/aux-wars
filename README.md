@@ -58,6 +58,10 @@ Host keys: **Space** = the big button, **P** = pause/resume auto-reveal, **M** =
 
 Rooms live in memory and expire after 24 hours; restarting the server ends all games.
 
+## Keeping it fresh
+
+Genre themes (rap, trap, Afrobeats, dancehall, R&B, Latin, pop, soul) add a well-known song from a random handful of artists every game, on top of the curated list. Artist Spotlight is always pulled live. The host screen also remembers the last few hundred songs it showed and saves those for last, so back-to-back games differ.
+
 ## Phones can't open the join link?
 
 A blank or black page on the phone almost always means the phone never reached the laptop.

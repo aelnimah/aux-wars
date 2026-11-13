@@ -51,6 +51,15 @@ function toggleMute() {
 }
 
 // ---------- helpers ----------
+// Remember the songs this screen has shown lately, so the next game leans toward different ones.
+function remember() {
+  const songs = s?.match?.songs; if (!songs?.length) return;
+  const seen = store.json('aux-seen') || [];
+  let changed = false;
+  for (const x of songs) { const k = `${x.artist}|${x.title}`.toLowerCase(); if (!seen.includes(k)) { seen.push(k); changed = true; } }
+  if (changed) store.set('aux-seen', JSON.stringify(seen.slice(-300)));
+}
+
 const call = (action, extra = {}) =>
   api('/api/host', { code: session.code, key: session.key, action, ...extra }).catch((e) => { err = e.message; render(); });
 
@@ -266,7 +275,7 @@ async function perform(act, d = {}) {
     case 'pack': { const i = form.packs.indexOf(d.id); if (i >= 0) form.packs.splice(i, 1); else form.packs.push(d.id); return render(); }
     case 'create':
       try {
-        const r = await api('/api/create', form);
+        const r = await api('/api/create', { ...form, avoid: store.json('aux-seen') || [] });
         session = { code: r.code, key: r.key, hostPid: r.hostPid };
         store.set('aux-host', JSON.stringify(session));
         err = ''; notice = ''; open();
@@ -325,7 +334,7 @@ function open() {
   es?.close();
   es = connect(`/api/events?role=host&code=${session.code}&key=${session.key}`, (st) => {
     const prev = s?.phase;
-    s = st; render(); syncAudio();
+    s = st; render(); syncAudio(); remember();
     if (st.phase === 'champion' && prev !== 'champion') confetti();
   }, () => {
     store.del('aux-host'); session = null; s = null; es?.close();

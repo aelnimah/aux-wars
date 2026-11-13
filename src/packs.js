@@ -34,6 +34,8 @@ Missy Elliott - Work It`),
   {
     id: 'hiphop', emoji: '🎤', name: 'Hip-Hop Heavyweights', question: 'Best rap song?',
     desc: 'Drake, Kanye, 50, Kendrick, Cole, Travis & friends',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['Drake', 'Kanye West', 'Kendrick Lamar', 'J. Cole', 'Travis Scott', 'JAY-Z', 'Eminem', '50 Cent', 'Nicki Minaj', 'Lil Wayne', 'Snoop Dogg', 'Nas', 'OutKast', 'A$AP Rocky', 'Future', 'Ludacris', 'Nelly', 'T.I.', 'Rick Ross', 'Big Sean', 'Wiz Khalifa', 'Pusha T', 'Busta Rhymes', 'Missy Elliott'],
     songs: L(`
 Drake - God's Plan
 Drake - Hotline Bling
@@ -296,6 +298,8 @@ Mario - Let Me Love You`),
   },
   {
     id: 'latin', emoji: '💃', name: 'Latin Heat', question: 'Best Latin banger?', desc: 'Reggaeton, pop and classics',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['Bad Bunny', 'Daddy Yankee', 'Shakira', 'J Balvin', 'KAROL G', 'ROSALÍA', 'Maluma', 'Enrique Iglesias', 'Marc Anthony', 'Ozuna', 'Rauw Alejandro', 'Anuel AA', 'Nicky Jam', 'Don Omar', 'Wisin & Yandel', 'Romeo Santos', 'Becky G', 'Pitbull', 'Feid', 'Peso Pluma'],
     songs: L(`
 Bad Bunny - DÁKITI
 Daddy Yankee - Gasolina
@@ -387,6 +391,8 @@ The Notorious B.I.G. - Hypnotize`),
   },
   {
     id: 'newschool', emoji: '⚡', name: 'New-School Rap', question: 'Best modern rap song?', desc: 'Last decade and a half of rap',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['Lil Baby', '21 Savage', 'Roddy Ricch', 'Playboi Carti', 'Gunna', 'Pop Smoke', 'Juice WRLD', 'Lil Uzi Vert', 'Jack Harlow', 'DaBaby', 'Megan Thee Stallion', 'Cardi B', 'Doja Cat', 'Lil Durk', 'Polo G', 'Don Toliver', 'Metro Boomin', 'Young Thug', 'Tyler, The Creator', 'Post Malone', 'Travis Scott'],
     songs: L(`
 Lil Baby - Drip Too Hard
 Roddy Ricch - The Box
@@ -417,6 +423,8 @@ Lil Uzi Vert - XO Tour Llif3`),
   },
   {
     id: 'popqueens', emoji: '👑', name: 'Pop Queens', question: 'Best pop-girl anthem?', desc: 'Divas and main characters',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['Beyoncé', 'Rihanna', 'Lady Gaga', 'Taylor Swift', 'Ariana Grande', 'Katy Perry', 'Dua Lipa', 'Billie Eilish', 'Olivia Rodrigo', 'Sabrina Carpenter', 'Doja Cat', 'Miley Cyrus', 'Selena Gomez', 'Britney Spears', 'Christina Aguilera', 'Nicki Minaj', 'Lizzo', 'Adele', 'P!nk', 'Kesha'],
     songs: L(`
 Beyoncé - Halo
 Rihanna - Diamonds
@@ -445,6 +453,8 @@ Ariana Grande - thank u, next`),
   },
   {
     id: 'afro', emoji: '🌍', name: 'Afrobeats Heat', question: 'Best Afrobeats song?', desc: 'Lagos to the world',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['Burna Boy', 'Wizkid', 'Davido', 'Rema', 'Tems', 'Asake', 'Ayra Starr', 'Fireboy DML', 'Omah Lay', 'Tiwa Savage', 'Kizz Daniel', 'CKay', 'Tekno', 'Mr Eazi', 'Joeboy', 'Oxlade', 'Yemi Alade', 'P-Square', 'Ruger', 'Tyla'],
     songs: L(`
 Burna Boy - Last Last
 Burna Boy - Ye
@@ -483,6 +493,8 @@ Yemi Alade - Johnny`),
   },
   {
     id: 'dancehall', emoji: '🏝️', name: 'Dancehall & Reggae', question: 'Best dancehall or reggae song?', desc: 'Island heat',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['Sean Paul', 'Shaggy', 'Popcaan', 'Vybz Kartel', 'Beenie Man', 'Bob Marley & The Wailers', 'Damian Marley', 'Koffee', 'Spice', 'Kranium', 'Wayne Wonder', 'Mavado', 'Konshens', 'Charly Black', 'Elephant Man', 'Buju Banton'],
     songs: L(`
 Sean Paul - Temperature
 Sean Paul - Get Busy
@@ -514,6 +526,8 @@ Sean Kingston - Beautiful Girls`),
   },
   {
     id: 'modrnb', emoji: '🎶', name: 'Modern R&B', question: 'Best modern R&B song?', desc: 'Today’s smooth voices',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['SZA', 'The Weeknd', 'Frank Ocean', 'Brent Faiyaz', 'GIVĒON', 'Summer Walker', 'Jhené Aiko', 'Kehlani', 'Bryson Tiller', 'PARTYNEXTDOOR', 'H.E.R.', 'Daniel Caesar', 'Khalid', 'Miguel', 'Ella Mai', 'Victoria Monét', 'Chris Brown', 'Tinashe', 'Kali Uchis', '6LACK'],
     songs: L(`
 Brent Faiyaz - Dead Man Walking
 GIVĒON - Heartbreak Anniversary
@@ -576,6 +590,8 @@ Ne-Yo - So Sick`),
   },
   {
     id: 'trap', emoji: '🔊', name: 'Trap Heat', question: 'Best trap song?', desc: 'Hi-hats and 808s',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['Future', 'Migos', 'Gucci Mane', '2 Chainz', 'Young Thug', '21 Savage', 'Lil Baby', 'Rae Sremmurd', 'Chief Keef', 'Waka Flocka Flame', 'Kodak Black', 'Fetty Wap', 'Lil Uzi Vert', 'Offset', 'Quavo', 'Moneybagg Yo', 'Jeezy', 'T.I.'],
     songs: L(`
 Chief Keef - Love Sosa
 21 Savage - Bank Account
@@ -769,6 +785,8 @@ PSY - Gangnam Style`),
   },
   {
     id: 'soul', emoji: '☀️', name: 'Soul Classics', question: 'Best soul classic?', desc: 'The songs your parents were right about',
+    // Each game also pulls a well-known song from some of these artists, so this theme keeps changing.
+    fresh: ['Stevie Wonder', 'Marvin Gaye', 'Aretha Franklin', 'Al Green', 'Bill Withers', 'Otis Redding', 'Sam Cooke', 'The Temptations', 'Earth, Wind & Fire', 'Luther Vandross', 'Sade', 'Anita Baker', 'Lauryn Hill', 'Erykah Badu', 'Whitney Houston', 'The Jackson 5', 'Gladys Knight & The Pips', 'Smokey Robinson', 'Diana Ross', 'Curtis Mayfield'],
     songs: L(`
 Bill Withers - Lovely Day
 Bill Withers - Ain't No Sunshine

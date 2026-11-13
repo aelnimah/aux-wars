@@ -55,6 +55,7 @@ export function createRoom(input = {}) {
   const room = {
     code, hostKey: crypto.randomBytes(16).toString('hex'), createdAt: Date.now(),
     settings: { qualifiers: q, autoSeconds: auto, voteSeconds: vote, autoNext, mode, packs, hostPlays: !!input.hostPlays },
+    avoid: new Set((Array.isArray(input.avoid) ? input.avoid : []).slice(0, 600).filter((x) => typeof x === 'string' && x.length < 160).map((x) => x.toLowerCase())),
     players: new Map(), notify: null, timers: { reveal: null, vote: null, next: null, bots: [] },
   };
   resetGame(room);
@@ -164,9 +165,28 @@ async function planGame(room) {
   // Make sure a spotlight round shows up if one is available and the game is long enough.
   const spot = order.findIndex((pl) => pl.pack.id.startsWith('spot-'));
   if (spot >= q && q >= 8) { const at = Math.floor(Math.random() * q); [order[at], order[spot]] = [order[spot], order[at]]; }
+  // Songs this host saw in recent games go to the back of the line, so back-to-back games feel different.
+  const demote = (pool) => { pool.specs = [...pool.specs.filter((x) => !room.avoid.has(key(x.artist, x.title))), ...pool.specs.filter((x) => room.avoid.has(key(x.artist, x.title)))].reverse(); };
+  // Themes with a `fresh` artist list also get one well-known song from several of those artists, picked anew each game.
+  const freshen = async (pool) => {
+    if (pool.ready) return;
+    pool.ready = true;
+    const names = shuffle(pool.pack.fresh || []).slice(0, 10);
+    const have = new Set(pool.specs.map((x) => key(x.artist, x.title)));
+    for (let j = 0; j < names.length; j += 5) {
+      const lists = await Promise.all(names.slice(j, j + 5).map((n) => config.music.spotlightTracks(n).catch(() => [])));
+      for (const tracks of lists) {
+        const top = tracks.slice(0, 6).filter((t) => !have.has(key(t.artist, t.title)) && !room.avoid.has(key(t.artist, t.title)));
+        if (top.length) pool.specs.push(top[Math.floor(Math.random() * top.length)]);
+      }
+    }
+    pool.specs = shuffle(pool.specs);
+    demote(pool);
+  };
   const plan = [];
   for (let i = 0; i < q; i++) {
     const pool = order[i % order.length];
+    await freshen(pool);
     const specs = take(pool, ROUND_SIZE + EXTRA);
     // top up from the fullest other pools if this theme ran dry
     while (specs.length < ROUND_SIZE + EXTRA) {

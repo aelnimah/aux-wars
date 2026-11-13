@@ -191,3 +191,18 @@ test('a themed round has no repeated artist when the pool is varied enough', asy
   }
   closeRoom(room);
 });
+
+test('songs from recent games are saved for last, and fresh artist picks are mixed in', async () => {
+  const first = createRoom({ qualifiers: 4, mode: 'custom', packs: ['afro'], autoSeconds: 0, hostPlays: false });
+  addBots(first, 3);
+  await hostAction(first, 'start');
+  const seen = first.plan[0].specs.map((x) => `${x.artist}|${x.title}`);
+  closeRoom(first);
+  const room = createRoom({ qualifiers: 4, mode: 'custom', packs: ['afro'], autoSeconds: 0, hostPlays: false, avoid: seen });
+  addBots(room, 3);
+  await hostAction(room, 'start');
+  const again = room.plan[0].specs.filter((x) => seen.map((k) => k.toLowerCase()).includes(`${x.artist}|${x.title}`.toLowerCase()));
+  assert.equal(again.length, 0, 'the first round should avoid last game\'s songs');
+  assert.ok(room.plan.some((r) => r.specs.some((x) => / hit \d+$/.test(x.title))), 'expected a fresh artist pick');
+  closeRoom(room);
+});
