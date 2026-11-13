@@ -486,7 +486,6 @@ Ayra Starr - Bloody Samaritan
 Oxlade - KU LO SA
 Davido - Assurance
 Joeboy - Sip (Alcohol)
-Wizkid - Soco
 Mr Eazi - Leg Over
 Tekno - Pana
 Yemi Alade - Johnny`),
@@ -541,7 +540,6 @@ The Weeknd - Earned It
 Victoria Monét - On My Mama
 Coco Jones - ICU
 Muni Long - Hrs and Hrs
-Tinashe - 2 On
 Kali Uchis - Telepatía
 Daniel Caesar - Get You
 Khalid - Talk
@@ -570,7 +568,6 @@ Mary J. Blige - Be Without You
 Keyshia Cole - Love
 Jagged Edge - Let's Get Married
 Trey Songz - Can't Help but Wait
-Omarion - O
 B2K - Bump, Bump, Bump
 Amerie - 1 Thing
 Mýa - Case of the Ex
@@ -600,7 +597,7 @@ Travis Scott - Butterfly Effect
 Rae Sremmurd - Black Beatles
 Rich The Kid - Plug Walk
 Fetty Wap - 679
-DaBaby - SUGE (Yea Yea)
+DaBaby - Suge
 Lil Pump - Gucci Gang
 BlocBoy JB - Look Alive
 Migos - T-Shirt
@@ -632,9 +629,8 @@ Tears for Fears - Everybody Wants To Rule The World
 Phil Collins - In the Air Tonight
 Wham! - Wake Me Up Before You Go-Go
 Eurythmics - Sweet Dreams (Are Made Of This)
-Run-D.M.C. - Walk This Way
 Culture Club - Karma Chameleon
-Hall & Oates - Maneater
+Daryl Hall & John Oates - Maneater
 Lionel Richie - Hello
 Janet Jackson - What Have You Done for Me Lately
 Stevie Wonder - I Just Called to Say I Love You

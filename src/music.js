@@ -55,14 +55,14 @@ async function isBrandNew(albumId) {
 }
 
 // Never substitute these for the original recording.
-const HARD = /\b(live|remix|remixed|rmx|karaoke|instrumental|acoustic|cover|tribute|sped up|slowed|nightcore|re-?recorded|rerecorded|mashup|bootleg|demo|a ?cappella|made famous|in the style of|commentary|piano version|reprise|refreak|originally performed|voice memo)\b/i;
+const HARD = /\b(live|remix|remixed|rmx|karaoke|instrumental|acoustic|cover|tribute|sped up|slowed|nightcore|re-?record(?:ed|ing)?|rerecorded|mashup|bootleg|demo|a ?cappella|made famous|in the style of|commentary|piano version|reprise|refreak|originally performed|voice memo)\b/i;
 // Fine as a second choice: same recording, different cut.
 const SOFT = /\b(version|edit|mix|remaster(ed)?|mono|stereo|single|club|extended|deluxe)\b/i;
 const ALT = HARD;
 // Bits in brackets or after a dash that still mean "the normal recording".
 const PLAINWORDS = new Set('album version explicit clean dirty original radio edit single main remaster remastered mono stereo lp'.split(' '));
 const HARMLESS = { test: (e) => /^(feat|ft|with|featuring)\b/i.test(e) || /^taylor.s version$/i.test(e) || /^from\b|soundtrack/i.test(e) || norm(e).split(' ').every((w) => PLAINWORDS.has(w) || /^\d{4}$/.test(w)) };
-const extras = (t) => [...String(t).matchAll(/[([]([^)\]]*)[)\]]/g)].map((m) => m[1].trim()).concat((String(t).split(/\s+-\s+/).slice(1)).map((x) => x.trim()));
+const extras = (t) => [...String(t).matchAll(/[([]([^)\]]*)[)\]]/g)].map((m) => m[1].trim()).concat((String(t).split(/\s+[-\/]\s+/).slice(1)).map((x) => x.trim()));
 /** Does this title carry anything the asked-for title doesn't (a remix name, "Bamboo", "12\" Mix"…)? */
 const isPlain = (wanted, got) => { const w = norm(wanted); return extras(got).every((e) => HARMLESS.test(e) || w.includes(norm(e))); };
 const shape = (hit) => ({
@@ -77,7 +77,8 @@ const parts = (x) => String(x).split(/\s*(?:,|&|\bx\b|\band\b|\bfeat\.?|\bwith\b
 export function artistMatches(spec, hit) {
   const a = norm(spec).replace(/^the /, ''), b = norm(hit.artist?.name || '').replace(/^the /, '');
   if (!a || !b) return false;
-  if (a === b || b.startsWith(`${a} `)) return true;
+  if (a === b) return true;
+  if (b.startsWith(`${a} `)) return !/\b(experience|tribute|karaoke|covers?|band|orchestra|singers|players|all stars|ensemble|project)\b/.test(b.slice(a.length)); // "Soulja Boy Tell'em" yes, "Elton John Experience" no
   if (HARD.test(hit.artist?.name || '')) return false;
   // collaborations: "Brandy & Monica" accepts "Brandy", and "Macklemore" accepts "Macklemore & Ryan Lewis"
   return parts(spec).includes(b) || parts(hit.artist?.name || '').includes(a);
@@ -95,7 +96,7 @@ async function itunesLookup(artist, title) {
     .filter((r) => !HARD.test(r.trackName) || HARD.test(title));
   const exact = (r) => norm(r.artistName) === norm(artist) || norm(r.artistName).startsWith(`${norm(artist)} `);
   const plain = ok.filter((r) => isPlain(title, r.trackName) && !HARD.test(r.collectionName || ''));
-  const hit = plain.find(exact) || plain[0] || ok.find(exact) || ok[0];
+  const hit = plain.find(exact) || plain[0] || ok.find(exact); // a different act with a different cut is not the song
   return hit ? { apple: true, name: `${hit.artistName} - ${hit.trackName} (Apple)`, plain: plain.includes(hit), rank: 500000, preview: hit.previewUrl, cover: hit.artworkUrl100 ? hit.artworkUrl100.replace('100x100', '600x600') : null } : null;
 }
 
