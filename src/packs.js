@@ -380,7 +380,7 @@ Mase - Feel So Good
 DMX - Party Up (Up In Here)
 A Tribe Called Quest - Can I Kick It?
 LL COOL J - Mama Said Knock You Out
-Fat Joe - Lean Back
+Terror Squad - Lean Back
 Ying Yang Twins - Salt Shaker
 Chingy - Right Thurr
 Three 6 Mafia - Stay Fly
