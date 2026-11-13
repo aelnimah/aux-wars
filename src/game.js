@@ -134,7 +134,7 @@ async function planGame(room) {
         if (made >= 3) break;
         const tracks = await config.music.spotlightTracks(name);
         if (tracks.length >= ROUND_SIZE) {
-          pools.push({ pack: { id: `spot-${name}`, emoji: '🎯', question: `Best ${name} song?` }, specs: shuffle(tracks) });
+          pools.push({ pack: { id: `spot-${name}`, emoji: '🎯', question: `Best ${name} song?` }, specs: shuffle(tracks.slice(0, ROUND_SIZE + EXTRA)) });
           made++;
         }
       }
@@ -145,12 +145,18 @@ async function planGame(room) {
   }
   if (!pools.length) fail('No songs available. Check your connection or pick other themes.');
   const used = new Set();
-  const take = (pool, n) => {
+  // Take n unused songs from a pool. Variety first: one song per artist, then a second if the pool runs short.
+  const take = (pool, n, have = []) => {
     const out = [];
-    while (out.length < n && pool.specs.length) {
-      const s = pool.specs.pop();
-      const k = key(s.artist, s.title);
-      if (!used.has(k)) { used.add(k); out.push(s); }
+    const count = (artist) => [...have, ...out].filter((x) => x.artist.toLowerCase() === artist.toLowerCase()).length;
+    for (const cap of pool.pack.id.startsWith('spot-') ? [Infinity] : [1, 2, Infinity]) {
+      for (let j = pool.specs.length - 1; j >= 0 && out.length < n; j--) {
+        const sp = pool.specs[j], k = key(sp.artist, sp.title);
+        if (used.has(k)) { pool.specs.splice(j, 1); continue; }
+        if (count(sp.artist) >= cap) continue;
+        used.add(k); out.push(sp); pool.specs.splice(j, 1);
+      }
+      if (out.length >= n) break;
     }
     return out;
   };
@@ -166,7 +172,7 @@ async function planGame(room) {
     while (specs.length < ROUND_SIZE + EXTRA) {
       const other = [...order].sort((a, b) => b.specs.length - a.specs.length)[0];
       if (!other || !other.specs.length) break;
-      specs.push(...take(other, ROUND_SIZE + EXTRA - specs.length));
+      specs.push(...take(other, ROUND_SIZE + EXTRA - specs.length, specs));
     }
     if (specs.length < ROUND_SIZE) fail(`Not enough songs for ${q} rounds. Pick more themes or fewer rounds.`);
     plan.push({ pack: pool.pack, question: pool.pack.question, specs: shuffle(specs) });

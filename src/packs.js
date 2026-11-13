@@ -74,10 +74,6 @@ Nelly - Hot In Herre
 Ludacris - Stand Up
 Gwen Stefani - Hollaback Girl
 Kelly Clarkson - Since U Been Gone
-Fall Out Boy - Dance, Dance
-Green Day - American Idiot
-Linkin Park - In the End
-Evanescence - Bring Me To Life
 Justin Timberlake - SexyBack
 Akon - Smack That
 T.I. - Whatever You Like
@@ -85,9 +81,16 @@ Lil Wayne - Lollipop
 Shakira - Hips Don't Lie
 Mariah Carey - We Belong Together
 Amy Winehouse - Rehab
-MGMT - Kids
 Ne-Yo - So Sick
-Sean Kingston - Beautiful Girls`),
+Sean Kingston - Beautiful Girls
+Nelly Furtado - Promiscuous
+Timbaland - The Way I Are
+Soulja Boy - Crank That (Soulja Boy)
+Fergie - Glamorous
+Missy Elliott - Lose Control
+Chris Brown - Kiss Kiss
+Kanye West - Gold Digger
+50 Cent - In da Club`),
   },
   {
     id: '90s', emoji: '📼', name: '90s Nostalgia', question: 'Best 90s classic?',
@@ -131,7 +134,6 @@ Post Malone - Circles
 SZA - Snooze
 Childish Gambino - Redbone
 Bruno Mars - Locked out of Heaven
-The Neighbourhood - Sweater Weather
 Khalid - Location
 Lorde - Royals
 Joji - Slow Dancing in the Dark
@@ -140,8 +142,13 @@ Mac Miller - Self Care
 Kanye West - Runaway
 Kid Cudi - Day 'N' Nite
 Don Toliver - No Idea
-Tame Impala - The Less I Know The Better
-Glass Animals - Heat Waves`),
+Glass Animals - Heat Waves
+Bryson Tiller - Don't
+Miguel - Adorn
+Rihanna - Needed Me
+Drake - Passionfruit
+Travis Scott - goosebumps
+The Weeknd - Die For You`),
   },
   {
     id: 'gym', emoji: '💪', name: 'Gym Beast Mode', question: 'Best workout song?',
@@ -155,17 +162,22 @@ Pop Smoke - Dior
 21 Savage - a lot
 Cardi B - I Like It
 Meek Mill - Dreams and Nightmares
-Nas - Made You Look
-Gucci Mane - Lemonade
-Run The Jewels - Legend Has It
 Travis Scott - Antidote
-Future - Stick Talk
 Megan Thee Stallion - Body
 Lil Uzi Vert - Money Longer
 DJ Khaled - I'm the One
 Nicki Minaj - Super Bass
 Kanye West - Black Skinhead
-Kanye West - Power`),
+Kanye West - Power
+Kanye West - Stronger
+Drake - Nonstop
+Travis Scott - SICKO MODE
+Beyoncé - Run the World (Girls)
+JAY-Z - Dirt Off Your Shoulder
+Rick Ross - Hustlin'
+Kendrick Lamar - m.A.A.d city
+T.I. - Bring Em Out
+50 Cent - In da Club`),
   },
   {
     id: 'heartbreak', emoji: '💔', name: 'Heartbreak Hotel', question: 'Best breakup song?',
@@ -189,7 +201,12 @@ Beyoncé - Irreplaceable
 Mary J. Blige - Not Gon' Cry
 Miley Cyrus - Flowers
 Bruno Mars - When I Was Your Man
-Coldplay - Fix You`),
+Justin Timberlake - Cry Me a River
+Beyoncé - Best Thing I Never Had
+Rihanna - Take a Bow
+Usher - Burn
+Toni Braxton - Un-Break My Heart
+Kelly Clarkson - Since U Been Gone`),
   },
   {
     id: 'summer', emoji: '☀️', name: 'Summer Anthems', question: 'Best summer song?',
@@ -211,7 +228,13 @@ Bob Marley & The Wailers - Three Little Birds
 Wiz Khalifa - Black and Yellow
 Mark Ronson - Uptown Funk
 Doja Cat - Woman
-Jack Johnson - Banana Pancakes`),
+Rihanna - Pon de Replay
+Beyoncé - CUFF IT
+Drake - One Dance
+Sean Paul - Temperature
+Nelly - Hot In Herre
+Burna Boy - Last Last
+Will Smith - Miami`),
   },
   {
     id: '2010s', emoji: '📱', name: '2010s Bangers', question: 'Best 2010s hit?', desc: 'Radio hits from the streaming era',
@@ -223,7 +246,6 @@ Katy Perry - Roar
 Adele - Hello
 Fetty Wap - Trap Queen
 Justin Bieber - Sorry
-Imagine Dragons - Radioactive
 Maroon 5 - Sugar
 Ariana Grande - 7 rings
 Post Malone - rockstar
@@ -236,7 +258,13 @@ Shawn Mendes - Treat You Better
 Selena Gomez - Good for You
 Halsey - Without Me
 Drake - Hotline Bling
-The Weeknd - Can't Feel My Face`),
+The Weeknd - Can't Feel My Face
+Bruno Mars - 24K Magic
+Jason Derulo - Talk Dirty
+Nicki Minaj - Starships
+Drake - God's Plan
+Cardi B - Bodak Yellow
+Mark Ronson - Uptown Funk`),
   },
   {
     id: 'slowjams', emoji: '🕯️', name: 'Slow Jams', question: 'Best slow jam?', desc: 'R&B for the smooth hours',
@@ -246,21 +274,25 @@ Boyz II Men - I'll Make Love To You
 Sade - Smooth Operator
 Luther Vandross - Never Too Much
 Aaliyah - Are You That Somebody?
-Brandy - Sittin' Up In My Room
-Jodeci - Forever My Lady
-Maxwell - Ascension (Don't Ever Wonder)
 D'Angelo - Untitled (How Does It Feel)
 Alicia Keys - Fallin'
 Anita Baker - Sweet Love
 SZA - Good Days
 Daniel Caesar - Best Part
-H.E.R. - Focus
 Summer Walker - Playing Games
 Ne-Yo - Because Of You
 Jhené Aiko - The Worst
 Beyoncé - Drunk in Love
 Toni Braxton - Un-Break My Heart
-Usher - You Make Me Wanna...`),
+Usher - You Make Me Wanna...
+Usher - Nice & Slow
+Next - Too Close
+K-Ci & JoJo - All My Life
+Ginuwine - Pony
+Al Green - Let's Stay Together
+Miguel - Adorn
+Silk Sonic - Leave The Door Open
+Mario - Let Me Love You`),
   },
   {
     id: 'latin', emoji: '💃', name: 'Latin Heat', question: 'Best Latin banger?', desc: 'Reggaeton, pop and classics',
@@ -295,17 +327,20 @@ Carly Rae Jepsen - Call Me Maybe
 Kesha - TiK ToK
 Katy Perry - Firework
 Taylor Swift - You Belong With Me
-Vengaboys - We Like To Party!
-Savage Garden - Truly Madly Deeply
 Ariana Grande - thank u, next
 Pitbull - Give Me Everything
 LMFAO - Party Rock Anthem
 Justin Bieber - Baby
 One Direction - What Makes You Beautiful
-Avril Lavigne - Sk8er Boi
 Vanessa Carlton - A Thousand Miles
 Meghan Trainor - All About That Bass
-Jonas Brothers - Burnin' Up`),
+Jonas Brothers - Burnin' Up
+Aqua - Barbie Girl
+Black Eyed Peas - My Humps
+Soulja Boy - Kiss Me Thru The Phone
+Jesse McCartney - Beautiful Soul
+Spice Girls - Wannabe
+Rihanna - S&M`),
   },
   {
     id: 'wedding', emoji: '💍', name: 'Wedding Dance Floor', question: 'Best wedding dance song?', desc: 'Grandma and the DJ approve',
@@ -372,7 +407,13 @@ Drake - Nice For What
 Tyga - Taste
 Jack Harlow - First Class
 Lil Durk - All My Life
-J. Cole - m y . l i f e`),
+Drake - Rich Flex
+Cardi B - WAP
+Jack Harlow - Lovin On Me
+Future - Like That
+Travis Scott - FE!N
+Doja Cat - Paint The Town Red
+Lil Uzi Vert - XO Tour Llif3`),
   },
   {
     id: 'popqueens', emoji: '👑', name: 'Pop Queens', question: 'Best pop-girl anthem?', desc: 'Divas and main characters',
@@ -393,9 +434,14 @@ Tate McRae - greedy
 Doja Cat - Paint The Town Red
 Miley Cyrus - Wrecking Ball
 Selena Gomez - Lose You To Love Me
-Kesha - Praying
-Lorde - Green Light
-Carly Rae Jepsen - Cut To The Feeling`),
+Britney Spears - Toxic
+Lady Gaga - Poker Face
+Rihanna - Only Girl (In The World)
+Beyoncé - Single Ladies (Put a Ring on It)
+Nicki Minaj - Super Bass
+Christina Aguilera - Dirrty
+Taylor Swift - Love Story
+Ariana Grande - thank u, next`),
   },
   {
     id: 'afro', emoji: '🌍', name: 'Afrobeats Heat', question: 'Best Afrobeats song?', desc: 'Lagos to the world',
@@ -423,29 +469,17 @@ Tyla - Water
 Tiwa Savage - Somebody's Son
 Kizz Daniel - Buga
 Ruger - Dior
-Libianca - People`),
-  },
-  {
-    id: 'afroslow', emoji: '💛', name: 'Afrobeats Love Songs', question: 'Best Afrobeats love song?', desc: 'Smooth, romantic, melodic',
-    songs: L(`
+Libianca - People
 Wizkid - Joro
-Davido - Assurance
-Omah Lay - Understand
-Tiwa Savage - Eminado
-Ayra Starr - Bloody Samaritan
-Fireboy DML - Apple
-Tems - Higher
 Rema - Dumebi
-Burna Boy - Anybody
+Ayra Starr - Bloody Samaritan
 Oxlade - KU LO SA
+Davido - Assurance
 Joeboy - Sip (Alcohol)
-Asake - Organise
-Wizkid - Smile
-Davido - Stand Strong
-Fireboy DML - Jealous
-Omah Lay - Bad Influence
-Tems - Crazy Tings
-Rema - Charm`),
+Wizkid - Soco
+Mr Eazi - Leg Over
+Tekno - Pana
+Yemi Alade - Johnny`),
   },
   {
     id: 'dancehall', emoji: '🏝️', name: 'Dancehall & Reggae', question: 'Best dancehall or reggae song?', desc: 'Island heat',
@@ -458,17 +492,25 @@ Popcaan - Unstoppable
 Koffee - Toast
 Spice - Go Down Deh
 Beenie Man - Who Am I (Sim Simma)
-Shenseea - Lick
-Buju Banton - Champion
-Mavado - On the Rock
 Damian Marley - Welcome to Jamrock
-Chronixx - Skankin' Sweet
 Rihanna - Rude Boy
 Major Lazer - Lean On
 Kranium - Nobody Has to Know
 Bob Marley & The Wailers - Could You Be Loved
 Gyptian - Hold You
-Vybz Kartel - Fever`),
+Vybz Kartel - Fever
+Sean Paul - We Be Burnin'
+Wayne Wonder - No Letting Go
+Kevin Lyttle - Turn Me On
+Bob Marley & The Wailers - Is This Love
+Rihanna - Pon de Replay
+Vybz Kartel - Clarks
+Charly Black - Gyal You A Party Animal
+Drake - Controlla
+Inner Circle - Bad Boys
+Chaka Demus & Pliers - Murder She Wrote
+Sister Nancy - Bam Bam
+Sean Kingston - Beautiful Girls`),
   },
   {
     id: 'modrnb', emoji: '🎶', name: 'Modern R&B', question: 'Best modern R&B song?', desc: 'Today’s smooth voices',
@@ -478,12 +520,10 @@ GIVĒON - Heartbreak Anniversary
 Chris Brown - Under The Influence
 Summer Walker - Girls Need Love
 Jhené Aiko - Triggered
-Ari Lennox - Shea Butter Baby
 Kehlani - Nights Like This
 Bryson Tiller - Exchange
 PARTYNEXTDOOR - Come and See Me
 The Weeknd - Earned It
-Usher - Don't Waste My Time
 Victoria Monét - On My Mama
 Coco Jones - ICU
 Muni Long - Hrs and Hrs
@@ -491,7 +531,15 @@ Tinashe - 2 On
 Kali Uchis - Telepatía
 Daniel Caesar - Get You
 Khalid - Talk
-Jorja Smith - Blue Lights`),
+SZA - The Weekend
+Miguel - Sure Thing
+Bryson Tiller - Don't
+Ella Mai - Boo'd Up
+Drake - Hold On, We're Going Home
+The Weeknd - Die For You
+Beyoncé - CUFF IT
+SZA - Kill Bill
+Frank Ocean - Thinkin Bout You`),
   },
   {
     id: 'throwrnb', emoji: '💿', name: 'Throwback R&B', question: 'Best 2000s R&B song?', desc: 'Slow dances and ringtones',
@@ -513,51 +561,46 @@ B2K - Bump, Bump, Bump
 Amerie - 1 Thing
 Mýa - Case of the Ex
 112 - Peaches & Cream
-Monica - So Gone
-Brandy - Full Moon
 Ciara - Goodies
-Jazmine Sullivan - Bust Your Windows`),
+Jazmine Sullivan - Bust Your Windows
+T-Pain - Buy U a Drank (Shawty Snappin')
+Chris Brown - With You
+Akon - Don't Matter
+Lloyd - You
+Bobby V. - Slow Down
+Pretty Ricky - Grind With Me
+Ciara - 1, 2 Step
+Alicia Keys - You Don't Know My Name
+Beyoncé - Irreplaceable
+Ne-Yo - So Sick`),
   },
   {
     id: 'trap', emoji: '🔊', name: 'Trap Heat', question: 'Best trap song?', desc: 'Hi-hats and 808s',
     songs: L(`
-Young Thug - Best Friend
-Gucci Mane - Wasted
 Chief Keef - Love Sosa
 21 Savage - Bank Account
 Lil Baby - Yes Indeed
 Travis Scott - Butterfly Effect
-Playboi Carti - Shoota
-Offset - Clout
 Rae Sremmurd - Black Beatles
-2 Chainz - No Lie
 Rich The Kid - Plug Walk
 Fetty Wap - 679
 DaBaby - SUGE (Yea Yea)
 Lil Pump - Gucci Gang
 BlocBoy JB - Look Alive
-Tory Lanez - Say It
-Future - Wicked
-Migos - T-Shirt`),
-  },
-  {
-    id: 'uk', emoji: '🇬🇧', name: 'UK Rap & Grime', question: 'Best UK rap song?', desc: 'London, Manchester and beyond',
-    songs: L(`
-Stormzy - Big For Your Boots
-Skepta - That's Not Me
-Dave - Starlight
-Central Cee - Doja
-Little Simz - Venom
-AJ Tracey - Ladbroke Grove
-J Hus - Did You See
-Aitch - Taste (Make It Shake)
-Headie One - Both
-Giggs - Talkin' the Hardest
-Wiley - Wearing My Rolex
-Dizzee Rascal - Bonkers
-Kano - Hail
-Stormzy - Vossi Bop
-Skepta - Shutdown`),
+Migos - T-Shirt
+Future - March Madness
+Migos - Versace
+Desiigner - Panda
+Post Malone - White Iverson
+Kodak Black - Tunnel Vision
+Rae Sremmurd - No Type
+Rich Gang - Lifestyle
+2 Chainz - I'm Different
+Waka Flocka Flame - No Hands
+T.I. - What You Know
+Gucci Mane - I Get The Bag
+A$AP Ferg - Plain Jane
+Travis Scott - goosebumps`),
   },
   {
     id: '80s', emoji: '🕹️', name: '80s Throwback', question: 'Best 80s song?', desc: 'Synths, big hair, big hooks',
@@ -569,20 +612,26 @@ Madonna - Material Girl
 a-ha - Take On Me
 Whitney Houston - How Will I Know
 Cyndi Lauper - Time After Time
-Duran Duran - Hungry Like the Wolf
 Tears for Fears - Everybody Wants To Rule The World
 Phil Collins - In the Air Tonight
 Wham! - Wake Me Up Before You Go-Go
 Eurythmics - Sweet Dreams (Are Made Of This)
-Kenny Loggins - Danger Zone
 Run-D.M.C. - Walk This Way
 Culture Club - Karma Chameleon
 Hall & Oates - Maneater
 Lionel Richie - Hello
 Janet Jackson - What Have You Done for Me Lately
 Stevie Wonder - I Just Called to Say I Love You
-Bananarama - Cruel Summer
-Michael Jackson - Billie Jean`),
+Michael Jackson - Billie Jean
+Prince - When Doves Cry
+Madonna - Like a Virgin
+Rick James - Super Freak
+Michael Jackson - Smooth Criminal
+George Michael - Faith
+Chaka Khan - I Feel for You
+Bobby Brown - My Prerogative
+Whitney Houston - I Wanna Dance With Somebody (Who Loves Me)
+Lionel Richie - All Night Long (All Night)`),
   },
   {
     id: 'disco', emoji: '🪩', name: 'Disco & Funk Fever', question: 'Best groove?', desc: 'Impossible to sit still',
@@ -600,12 +649,14 @@ Sister Sledge - We Are Family
 Village People - Y.M.C.A.
 Lipps Inc. - Funkytown
 Dua Lipa - Physical
-Robyn - Dancing On My Own
 Kylie Minogue - Can't Get You Out of My Head
 Madonna - Hung Up
 Bee Gees - Stayin' Alive
 Parliament - Flash Light
-Prince - Let's Go Crazy`),
+Prince - Let's Go Crazy
+Michael Jackson - Don't Stop 'Til You Get Enough
+Earth, Wind & Fire - Let's Groove
+Chaka Khan - Ain't Nobody`),
   },
   {
     id: 'karaoke', emoji: '🎙️', name: 'Karaoke Classics', question: 'Best karaoke song?', desc: 'The ones you will absolutely attempt',
@@ -621,7 +672,6 @@ Madonna - Like a Prayer
 Céline Dion - My Heart Will Go On
 Kelly Clarkson - Stronger (What Doesn't Kill You)
 Ricky Martin - Livin' la Vida Loca
-Blondie - Heart Of Glass
 Billy Joel - Piano Man
 Stevie Wonder - Superstition
 Lionel Richie - All Night Long (All Night)
@@ -629,7 +679,10 @@ Rick Astley - Never Gonna Give You Up
 Tina Turner - Proud Mary
 Whitney Houston - I Wanna Dance With Somebody (Who Loves Me)
 Mariah Carey - Hero
-Backstreet Boys - I Want It That Way`),
+Backstreet Boys - I Want It That Way
+Beyoncé - Halo
+Alicia Keys - If I Ain't Got You
+Bruno Mars - Just the Way You Are`),
   },
   {
     id: 'roadtrip', emoji: '🚗', name: 'Singalong Classics', question: 'Best song to scream in the car?', desc: 'Everybody knows the words',
@@ -665,64 +718,25 @@ Adele - Skyfall
 Billie Eilish - No Time To Die
 Kendrick Lamar - All The Stars
 Ray Parker Jr. - Ghostbusters
-Berlin - Take My Breath Away
 Eminem - Lose Yourself
 Kenny Loggins - Footloose
 Celine Dion - My Heart Will Go On
 Phil Collins - You'll Be In My Heart
-Glen Hansard - Falling Slowly
 Whitney Houston - I Will Always Love You
-Lionel Richie - Say You, Say Me
 Irene Cara - Flashdance... What a Feeling
 Coolio - Gangsta's Paradise
 Will Smith - Men in Black
-Beyoncé - Listen
-Rihanna - Lift Me Up`),
-  },
-  {
-    id: 'sunday', emoji: '☕', name: 'Sunday Morning', question: 'Best Sunday-morning song?', desc: 'Pancakes and good vibes',
-    songs: L(`
-Jack Johnson - Better Together
-Norah Jones - Come Away With Me
-Jason Mraz - I'm Yours
-Bill Withers - Lovely Day
-The Beatles - Here Comes The Sun
-Stevie Wonder - Isn't She Lovely
-Van Morrison - Brown Eyed Girl
-Ben E. King - Stand By Me
-Otis Redding - (Sittin' On) The Dock Of The Bay
-Carole King - You've Got A Friend
-James Taylor - Fire and Rain
-Khruangbin - Time (You and I)
-Leon Bridges - Coming Home
-Michael Kiwanuka - Cold Little Heart
-Harry Styles - Adore You
-Marvin Gaye - Let's Get It On
-Sade - By Your Side
-Erykah Badu - On & On`),
-  },
-  {
-    id: 'rainy', emoji: '🌧️', name: 'Rainy Day', question: 'Best song for a rainy day?', desc: 'Blankets, tea, feelings',
-    songs: L(`
-Norah Jones - Don't Know Why
-Bon Iver - Holocene
-Billie Eilish - ocean eyes
-Lana Del Rey - Video Games
-Coldplay - The Scientist
-Radiohead - No Surprises
-Cigarettes After Sex - Apocalypse
-Mazzy Star - Fade Into You
-Adele - Hometown Glory
-Ed Sheeran - Photograph
-Jeff Buckley - Hallelujah
-Damien Rice - The Blower's Daughter
-The xx - Intro
-Frank Ocean - Pink + White
-Nina Simone - Feeling Good
-Bill Withers - Ain't No Sunshine
-Sam Cooke - A Change Is Gonna Come
-Tracy Chapman - Fast Car
-Lorde - Ribs`),
+Rihanna - Lift Me Up
+Post Malone - Sunflower
+Idina Menzel - Let It Go
+Seal - Kiss From A Rose
+Destiny's Child - Independent Women, Pt. 1
+Elton John - Can You Feel the Love Tonight
+Dua Lipa - Dance The Night
+Billie Eilish - What Was I Made For?
+Pharrell Williams - Happy
+The Weeknd - Earned It
+Bee Gees - Stayin' Alive`),
   },
   {
     id: 'onehit', emoji: '🦄', name: 'One-Hit Wonders', question: 'Best one-hit wonder?', desc: 'They only needed one',
@@ -730,7 +744,6 @@ Lorde - Ribs`),
 Soft Cell - Tainted Love
 Los del Río - Macarena (Bayside Boys Mix)
 Vanilla Ice - Ice Ice Baby
-Technotronic - Pump Up The Jam
 Baha Men - Who Let The Dogs Out
 Right Said Fred - I'm Too Sexy
 Sir Mix-A-Lot - Baby Got Back
@@ -743,7 +756,41 @@ Natalie Imbruglia - Torn
 Gotye - Somebody That I Used To Know
 Chingy - Right Thurr
 Sean Kingston - Beautiful Girls
-Cupid - Cupid Shuffle`),
+Cupid - Cupid Shuffle
+Silentó - Watch Me (Whip / Nae Nae)
+Rob Base & DJ EZ Rock - It Takes Two
+MIMS - This Is Why I'm Hot
+J-Kwon - Tipsy
+Daniel Powter - Bad Day
+Afroman - Because I Got High
+Carly Rae Jepsen - Call Me Maybe
+Desiigner - Panda
+PSY - Gangnam Style`),
+  },
+  {
+    id: 'soul', emoji: '☀️', name: 'Soul Classics', question: 'Best soul classic?', desc: 'The songs your parents were right about',
+    songs: L(`
+Bill Withers - Lovely Day
+Bill Withers - Ain't No Sunshine
+Stevie Wonder - Isn't She Lovely
+Ben E. King - Stand By Me
+Otis Redding - (Sittin' On) The Dock Of The Bay
+Marvin Gaye - Let's Get It On
+Marvin Gaye - What's Going On
+Sade - By Your Side
+Erykah Badu - On & On
+Nina Simone - Feeling Good
+Sam Cooke - A Change Is Gonna Come
+Tracy Chapman - Fast Car
+Al Green - Let's Stay Together
+Aretha Franklin - (You Make Me Feel Like) A Natural Woman
+The Temptations - My Girl
+Lauryn Hill - Ex-Factor
+Earth, Wind & Fire - Let's Groove
+Etta James - At Last
+The Jackson 5 - I'll Be There
+Whitney Houston - Greatest Love of All
+Luther Vandross - Dance With My Father`),
   },
   // Random-artist rounds: "Best Drake song?". Artists come from SPOTLIGHT_ARTISTS below.
   { id: 'spotlight', emoji: '🎯', name: 'Artist Spotlight', spotlight: true, desc: 'A random artist from the list below: best song by them?' },
@@ -763,10 +810,10 @@ export const SPOTLIGHT_ARTISTS = [
   'Missy Elliott', '2Pac', 'The Notorious B.I.G.', 'Dr. Dre', 'Ludacris', 'Nelly', 'Lil Baby', '21 Savage', 'Post Malone',
   'Juice WRLD', 'Mac Miller', 'Kid Cudi', 'Beyoncé', 'Rihanna', 'Usher', 'Alicia Keys', 'Chris Brown', 'The Weeknd', 'SZA',
   'Frank Ocean', 'Bruno Mars', 'Mary J. Blige', 'Aaliyah', 'Brandy', 'Ne-Yo', 'Whitney Houston', 'Mariah Carey', 'Stevie Wonder',
-  'Marvin Gaye', 'Sade', 'Jhené Aiko', 'Summer Walker', 'Khalid', 'Daniel Caesar', 'Janet Jackson', "Destiny's Child", 'Boyz II Men',
+  'Marvin Gaye', 'Sade', 'Khalid', 'Janet Jackson', "Destiny's Child", 'Boyz II Men',
   'Michael Jackson', 'Prince', 'Madonna', 'Taylor Swift', 'Ariana Grande', 'Dua Lipa', 'Billie Eilish', 'Justin Timberlake',
   'Britney Spears', 'Lady Gaga', 'Katy Perry', 'Adele', 'Ed Sheeran', 'Justin Bieber', 'Harry Styles', 'Doja Cat', 'Lizzo',
-  'Selena Gomez', 'Miley Cyrus', 'Elton John', 'ABBA', 'Backstreet Boys', 'Burna Boy', 'Wizkid', 'Davido', 'Rema', 'Tems',
-  'Asake', 'Ayra Starr', 'Tiwa Savage', 'Fireboy DML', 'Omah Lay', 'Tyla', 'Sean Paul', 'Shaggy', 'Bob Marley & The Wailers',
+  'Selena Gomez', 'Miley Cyrus', 'Elton John', 'ABBA', 'Backstreet Boys', 'Burna Boy', 'Wizkid', 'Davido', 'Rema',
+  'Sean Paul', 'Shaggy', 'Bob Marley & The Wailers',
   'Bad Bunny', 'Shakira', 'J Balvin', 'Daddy Yankee', 'Karol G', 'Enrique Iglesias',
 ];

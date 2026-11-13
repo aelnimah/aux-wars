@@ -18,6 +18,7 @@ async function getJson(url, ms = 7000) {
   }
 }
 
+const ALT = /\b(live|remix|karaoke|instrumental|acoustic|cover|tribute|sped up|slowed|re-?recorded|version|edit|mix)\b/i;
 const shape = (hit) => ({
   rank: Number(hit.rank) || 0, // Deezer popularity; higher = more widely known
   preview: hit.preview || null,
@@ -50,12 +51,18 @@ export const music = {
     if (cache.has(key)) return cache.get(key);
     let out = null;
     try {
+      // Prefer the original recording: the best-known match that isn't a live cut, remix, cover or karaoke take.
+      const pick = (list) => {
+        const ok = (list || []).filter((h) => h.preview && artistMatches(artist, h));
+        const clean = ok.filter((h) => !ALT.test(`${h.title || ''} ${h.album?.title || ''}`) || ALT.test(title));
+        return (clean.length ? clean : ok).sort((x, y) => (y.rank || 0) - (x.rank || 0))[0] || null;
+      };
       const strict = `artist:"${artist}" track:"${title}"`;
-      let j = await getJson(`https://api.deezer.com/search?q=${encodeURIComponent(strict)}&limit=5`);
-      let hit = (j.data || []).find((h) => h.preview);
+      let j = await getJson(`https://api.deezer.com/search?q=${encodeURIComponent(strict)}&limit=8`);
+      let hit = pick(j.data);
       if (!hit) {
-        j = await getJson(`https://api.deezer.com/search?q=${encodeURIComponent(`${artist} ${title}`)}&limit=8`);
-        hit = (j.data || []).find((h) => h.preview && artistMatches(artist, h));
+        j = await getJson(`https://api.deezer.com/search?q=${encodeURIComponent(`${artist} ${title}`)}&limit=10`);
+        hit = pick(j.data);
       }
       if (hit) out = shape(hit);
       else out = await itunesLookup(artist, title).catch(() => null);
@@ -79,8 +86,12 @@ export const music = {
         id = hit.id; cache.set(k, id);
       }
       const j = await getJson(`https://api.deezer.com/artist/${id}/top?limit=40`);
+      // best-known first, one entry per song (no remixes or live doubles)
+      const seen = new Set();
       return (j.data || [])
-        .filter((t) => t.preview)
+        .filter((t) => t.preview && !ALT.test(t.title || ''))
+        .sort((x, y) => (y.rank || 0) - (x.rank || 0))
+        .filter((t) => { const k = norm(t.title_short || t.title); if (seen.has(k)) return false; seen.add(k); return true; })
         .map((t) => ({ artist: name, title: t.title_short || t.title, resolved: shape(t) }));
     } catch {
       return [];

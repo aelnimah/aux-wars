@@ -179,3 +179,15 @@ test('closing a room removes it and stops its timers', async () => {
 });
 
 test.after(() => rooms.clear());
+
+test('a themed round has no repeated artist when the pool is varied enough', async () => {
+  const room = createRoom({ qualifiers: 4, mode: 'custom', packs: ['90s', 'y2k', 'karaoke', 'roadtrip'], autoSeconds: 0, hostPlays: false });
+  addBots(room, 3);
+  await hostAction(room, 'start');
+  for (const r of room.plan) {
+    const artists = r.specs.map((x) => x.artist.toLowerCase());
+    assert.equal(new Set(artists).size, artists.length, `repeated artist in "${r.question}"`);
+    assert.ok(r.specs.length >= 8);
+  }
+  closeRoom(room);
+});
