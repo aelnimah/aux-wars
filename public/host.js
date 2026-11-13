@@ -57,7 +57,8 @@ function estimate() {
   const qual = q * (4 + 8 * secs + 45), ko = (q - 1) * (4 + 2 * secs + 35);
   return Math.max(5, Math.round((qual + ko) / 60 / 5) * 5);
 }
-const joinUrl = (base = info.urls[0] || location.origin) => `${base}/join?room=${s.code}`;
+let addrIdx = 0;
+const joinUrl = (base = info.urls[addrIdx] || info.urls[0] || location.origin) => `${base}/join?room=${s.code}`;
 
 // Small groups tie constantly, so after one tiebreak (or a big tie in a small room) a random draw is the sensible default.
 const preferDraw = (m) => m.tieCount >= 1 || (m.result.tiedIds.length >= 3 && s.players.length <= 4);
@@ -139,7 +140,8 @@ function lobbyHtml() {
       <div class="roomcode logo">${esc(s.code)}</div>
       <div class="joinurl">${esc(url.replace('http://', ''))}</div>
       <p class="note" style="margin-top:10px">${info.urls.length ? 'Phones must be on the same Wi-Fi as this computer.' : '⚠️ No Wi-Fi network found. Phones can’t join until this computer is online.'}</p>
-      ${alt.length ? `<p class="note" style="margin-top:6px">QR not working? Try: ${alt.map((u) => `<a style="color:var(--accent2)" href="${esc(joinUrl(u))}" onclick="return false">${esc(u.replace('http://', ''))}</a>`).join(', ')}</p>` : ''}
+      ${info.urls.length > 1 ? `<div class="addrs"><span class="muted">Phone can’t open it? Pick another address:</span><div class="row" style="gap:8px;margin-top:8px">${info.urls.map((u, i) => `<button class="chip small ${i === addrIdx ? 'on' : ''}" data-act="addr" data-i="${i}">${esc(u.replace('http://', ''))}${info.names?.[i] ? ` <span class="muted">· ${esc(info.names[i])}</span>` : ''}</button>`).join('')}</div></div>` : ''}
+      <p class="note" style="margin-top:8px">Still stuck? Windows may be blocking Node. Allow it on Private networks when the firewall pops up.</p>
       <button class="btn small" style="margin-top:12px" data-act="copy">📋 Copy join link</button></div>
     <div><h2>${s.players.length ? `${s.players.length} in the room` : 'Waiting for players…'}</h2>
       <div class="players">${s.players.map((p) => `<span class="chip pl big ${p.online ? '' : 'off'}" data-key="${p.id}" style="--ph:${hueOf(p.name)}"><i class="dot"></i>${p.host ? '🎧 ' : ''}${esc(p.name)}${p.host ? '' : ` <button class="chip small x" data-act="kick" data-pid="${p.id}" title="Remove">✕</button>`}</span>`).join('') || '<span class="muted">Nobody yet. Scan the code!</span>'}</div>
@@ -258,6 +260,7 @@ async function perform(act, d = {}) {
     case 'start': audio.play().catch(() => {}); return call('start'); // the click unlocks audio
     case 'bots': return call('addBots', { count: 3 });
     case 'kick': return call('kick', { pid: d.pid });
+    case 'addr': addrIdx = Number(d.i) || 0; return render();
     case 'copy': try { await navigator.clipboard.writeText(joinUrl()); notice = ''; err = ''; } catch { /* ignore */ } return;
     case 'reveal': case 'openVoting': case 'closeVoting': case 'tiebreak': case 'randomTie': case 'next': case 'pause': case 'resume': return call(act);
     case 'replay': audio.play().catch(() => {}); return call('replay', { songId: d.id });

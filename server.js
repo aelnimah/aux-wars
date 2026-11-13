@@ -14,13 +14,24 @@ const PAGES = { '/': 'index.html', '/host': 'host.html', '/join': 'play.html' };
 
 const listeners = new Map(); // code -> Set<{res, role, pid}>
 
+// Addresses phones can use to reach this computer. Virtual adapters (WSL, VirtualBox, VPNs, Docker…)
+// are ranked last, because on Windows they often come first and give a link phones can't open.
+const VIRTUAL = /vethernet|virtual|vmware|vbox|hyper-v|wsl|docker|loopback|bluetooth|tailscale|zerotier|vpn|tap|tun|utun|bridge|vmnet|npcap|pseudo/i;
 function lanUrls() {
-  const out = [];
-  for (const list of Object.values(os.networkInterfaces())) for (const i of list || []) {
-    if (i.family === 'IPv4' && !i.internal) out.push(`http://${i.address}:${PORT}`);
+  const found = [];
+  for (const [name, list] of Object.entries(os.networkInterfaces())) for (const i of list || []) {
+    if (i.family !== 'IPv4' || i.internal) continue;
+    let score = 0;
+    if (VIRTUAL.test(name)) score -= 10;
+    if (/wi-?fi|wlan|wireless|^en0$|^wlp|ethernet|^eth|^en\d/i.test(name)) score += 4;
+    if (/^192\.168\.(0|1|2)\./.test(i.address)) score += 3;
+    else if (/^192\.168\./.test(i.address)) score += 2;
+    else if (/^10\./.test(i.address)) score += 2;
+    else if (/^172\.(1[6-9]|2\d|3[01])\./.test(i.address)) score += 0;
+    else if (/^169\.254\./.test(i.address)) score -= 20; // no DHCP lease
+    found.push({ url: `http://${i.address}:${PORT}`, name, score });
   }
-  // prefer typical home-network ranges first
-  return out.sort((a, b) => (/\/\/(192\.168|10\.)/.test(b) ? 1 : 0) - (/\/\/(192\.168|10\.)/.test(a) ? 1 : 0));
+  return found.sort((a, b) => b.score - a.score);
 }
 
 function send(res, code, body, type = 'application/json') {
@@ -59,7 +70,7 @@ async function api(req, res, url) {
   const route = url.pathname;
   if (req.method === 'GET') {
     if (route === '/api/exists') return rooms.has(String(url.searchParams.get('code') || '').toUpperCase()) ? send(res, 200, { ok: true }) : send(res, 404, { error: 'gone' });
-    if (route === '/api/info') return send(res, 200, { urls: lanUrls(), port: PORT });
+    if (route === '/api/info') return send(res, 200, { urls: lanUrls().map((x) => x.url), names: lanUrls().map((x) => x.name), port: PORT });
     if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, spotlight }) => ({ id, emoji, name, desc, live: !!spotlight })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
     if (route === '/api/qr') {
       const text = url.searchParams.get('text') || '';
@@ -142,6 +153,6 @@ setInterval(sweepRooms, 3600_000).unref();
 server.listen(PORT, '0.0.0.0', () => {
   console.log('\n  AUX WARS is running\n');
   console.log(`  Host screen:  http://localhost:${PORT}/host`);
-  for (const u of lanUrls()) console.log(`  On your Wi-Fi: ${u}  (phones join here)`);
+  for (const u of lanUrls()) console.log(`  On your Wi-Fi: ${u.url}  (${u.name})`);
   console.log('');
 });
