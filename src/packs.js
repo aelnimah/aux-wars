@@ -193,7 +193,7 @@ Sam Smith - Stay With Me
 Whitney Houston - I Will Always Love You
 Gotye - Somebody That I Used To Know
 Drake - Marvins Room
-Frank Ocean - Thinking Bout You
+Frank Ocean - Thinkin Bout You
 SZA - Kill Bill
 Billie Eilish - when the party's over
 Lewis Capaldi - Someone You Loved
@@ -758,7 +758,7 @@ Bee Gees - Stayin' Alive`),
     id: 'onehit', emoji: '🦄', name: 'One-Hit Wonders', question: 'Best one-hit wonder?', desc: 'They only needed one',
     songs: L(`
 Soft Cell - Tainted Love
-Los del Río - Macarena (Bayside Boys Mix)
+Los del Río - Macarena (Bayside Boys Remix)
 Vanilla Ice - Ice Ice Baby
 Baha Men - Who Let The Dogs Out
 Right Said Fred - I'm Too Sexy
