@@ -786,7 +786,8 @@ Ylvis - The Fox (What Does the Fox Say?)
 Baauer - Harlem Shake
 Cali Swag District - Teach Me How to Dougie
 V.I.C. - Wobble
-DJ Casper - Cha Cha Slide`),
+DJ Casper - Cha Cha Slide
+Carly Rae Jepsen - Call Me Maybe`),
   },
   {
     id: 'soul', emoji: '☀️', name: 'Soul Classics', question: 'Best soul classic?', desc: 'The songs your parents were right about',

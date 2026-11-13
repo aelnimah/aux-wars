@@ -53,7 +53,12 @@ function toggleMute() {
 // ---------- helpers ----------
 // Remember the songs this screen has shown lately, so the next game leans toward different ones.
 function remember() {
-  const songs = s?.match?.songs; if (!songs?.length) return;
+  const m = s?.match;
+  if (m?.kind !== 'knockout' && m?.question) { // the question of a qualifying round is its theme
+    const themes = store.json('aux-themes') || [];
+    if (themes[themes.length - 1] !== m.question) { const next = themes.filter((q) => q !== m.question); next.push(m.question); store.set('aux-themes', JSON.stringify(next.slice(-18))); }
+  }
+  const songs = m?.songs; if (!songs?.length) return;
   const seen = store.json('aux-seen') || [];
   let changed = false;
   for (const x of songs) { const k = `${x.artist}|${x.title}`.toLowerCase(); if (!seen.includes(k)) { seen.push(k); changed = true; } }
@@ -275,7 +280,7 @@ async function perform(act, d = {}) {
     case 'pack': { const i = form.packs.indexOf(d.id); if (i >= 0) form.packs.splice(i, 1); else form.packs.push(d.id); return render(); }
     case 'create':
       try {
-        const r = await api('/api/create', { ...form, avoid: store.json('aux-seen') || [] });
+        const r = await api('/api/create', { ...form, avoid: store.json('aux-seen') || [], avoidThemes: store.json('aux-themes') || [] });
         session = { code: r.code, key: r.key, hostPid: r.hostPid };
         store.set('aux-host', JSON.stringify(session));
         err = ''; notice = ''; open();

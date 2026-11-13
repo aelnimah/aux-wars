@@ -98,12 +98,18 @@ async function api(req, res, url) {
     if (route === '/api/exists') return rooms.has(String(url.searchParams.get('code') || '').toUpperCase()) ? send(res, 200, { ok: true }) : send(res, 404, { error: 'gone' });
     if (route === '/api/info') return send(res, 200, { urls: lanUrls().map((x) => x.url), names: lanUrls().map((x) => x.name), port: PORT, firewall, windows: process.platform === 'win32' });
     if (route === '/api/packs') return send(res, 200, { packs: PACKS.map(({ id, emoji, name, desc, spotlight }) => ({ id, emoji, name, desc, live: !!spotlight })), qualifiers: QUALIFIER_OPTIONS.map((q) => ({ q, total: totalMatches(q) })) });
-    if (route === '/api/sample') { // health check for the music source: what would this theme pull right now?
-      const pack = packById(url.searchParams.get('pack') || 'afro');
+    if (route === '/api/audit') { // what does the music source return for every song in a theme?
+      const pack = packById(url.searchParams.get('pack'));
       if (!pack || pack.spotlight) return send(res, 400, { error: 'Unknown theme' });
-      const curated = await Promise.all(pack.songs.slice(0, 4).map(async ([artist, title]) => ({ artist, title, ...(await music.resolveTrack(artist, title)) })));
-      const fresh = await Promise.all((pack.fresh || []).slice(0, 4).map(async (n) => ({ artist: n, top: (await music.spotlightTracks(n)).slice(0, 6).map((t) => `${t.title} (${t.resolved.rank})`) })));
-      return send(res, 200, { theme: pack.question, curated: curated.map((c) => ({ artist: c.artist, title: c.title, found: !!c.preview, rank: c.rank ?? null })), fresh });
+      const from = Number(url.searchParams.get('from')) || 0;
+      const rows = [];
+      for (const [artist, title] of pack.songs.slice(from, from + 40)) {
+        const r = await music.resolveTrack(artist, title);
+        rows.push(`${r ? 'OK ' : 'MISS'} | ${artist} - ${title} | ${r ? `${r.name} | ${r.rank}` : ''}`);
+      }
+      const fresh = [];
+      if (url.searchParams.get('fresh')) for (const n of pack.fresh || []) fresh.push(`${n}: ${(await music.spotlightTracks(n)).slice(0, 6).map((t) => `${t.title} (${t.resolved.rank})`).join('; ') || 'NOTHING'}`);
+      return send(res, 200, { theme: pack.question, rows, fresh });
     }
     if (route === '/api/qr') {
       const text = url.searchParams.get('text') || '';

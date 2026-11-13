@@ -31,6 +31,7 @@ async function getJson(url, ms = 7000) {
 
 const ALT = /\b(live|remix|karaoke|instrumental|acoustic|cover|tribute|sped up|slowed|re-?recorded|version|edit|mix)\b/i;
 const shape = (hit) => ({
+  name: `${hit.artist?.name || ''} - ${hit.title || ''}`, // what was actually matched, for the audit page
   rank: Number(hit.rank) || 0, // Deezer popularity; higher = more widely known
   preview: hit.preview || null,
   cover: hit.album?.cover_big || hit.album?.cover_medium || null,
@@ -55,7 +56,7 @@ async function itunesLookup(artist, title) {
   const j = await getJson(`https://itunes.apple.com/search?term=${encodeURIComponent(`${artist} ${title}`)}&media=music&entity=song&limit=5`);
   const ok = (j.results || []).filter((r) => r.previewUrl && artistMatches(artist, { artist: { name: r.artistName } }) && titleMatches(title, r.trackName));
   const hit = ok.find((r) => !ALT.test(`${r.trackName} ${r.collectionName || ''}`) || ALT.test(title)) || ok[0];
-  return hit ? { preview: hit.previewUrl, cover: hit.artworkUrl100 ? hit.artworkUrl100.replace('100x100', '600x600') : null } : null;
+  return hit ? { name: `${hit.artistName} - ${hit.trackName} (iTunes)`, rank: 0, preview: hit.previewUrl, cover: hit.artworkUrl100 ? hit.artworkUrl100.replace('100x100', '600x600') : null } : null;
 }
 
 export const music = {

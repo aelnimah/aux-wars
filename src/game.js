@@ -55,6 +55,7 @@ export function createRoom(input = {}) {
   const room = {
     code, hostKey: crypto.randomBytes(16).toString('hex'), createdAt: Date.now(),
     settings: { qualifiers: q, autoSeconds: auto, voteSeconds: vote, autoNext, mode, packs, hostPlays: !!input.hostPlays },
+    avoidThemes: new Set((Array.isArray(input.avoidThemes) ? input.avoidThemes : []).slice(0, 60).filter((x) => typeof x === 'string' && x.length < 120)),
     avoid: new Set((Array.isArray(input.avoid) ? input.avoid : []).slice(0, 600).filter((x) => typeof x === 'string' && x.length < 160).map((x) => x.toLowerCase())),
     players: new Map(), notify: null, timers: { reveal: null, vote: null, next: null, bots: [] },
   };
@@ -131,7 +132,8 @@ async function planGame(room) {
     if (pack.spotlight) {
       // a few random artists, each its own "Best <artist> song?" round
       let made = 0;
-      for (const name of shuffle(SPOTLIGHT_ARTISTS).slice(0, 10)) {
+      const recent = (n) => room.avoidThemes.has(`Best ${n} song?`);
+      for (const name of [...shuffle(SPOTLIGHT_ARTISTS.filter((n) => !recent(n))), ...shuffle(SPOTLIGHT_ARTISTS.filter(recent))].slice(0, 10)) {
         if (made >= 3) break;
         const tracks = await config.music.spotlightTracks(name);
         if (tracks.length >= ROUND_SIZE) {
@@ -161,7 +163,9 @@ async function planGame(room) {
     }
     return out;
   };
-  const order = shuffle(pools);
+  // Themes this host played recently go to the back, so the next game opens with different questions.
+  const mixed = shuffle(pools);
+  const order = [...mixed.filter((pl) => !room.avoidThemes.has(pl.pack.question)), ...mixed.filter((pl) => room.avoidThemes.has(pl.pack.question))];
   // Make sure a spotlight round shows up if one is available and the game is long enough.
   const spot = order.findIndex((pl) => pl.pack.id.startsWith('spot-'));
   if (spot >= q && q >= 8) { const at = Math.floor(Math.random() * q); [order[at], order[spot]] = [order[spot], order[at]]; }

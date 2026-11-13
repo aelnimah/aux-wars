@@ -206,3 +206,16 @@ test('songs from recent games are saved for last, and fresh artist picks are mix
   assert.ok(room.plan.some((r) => r.specs.some((x) => / hit \d+$/.test(x.title))), 'expected a fresh artist pick');
   closeRoom(room);
 });
+
+test('themes played recently are saved for last', async () => {
+  const first = createRoom({ qualifiers: 4, autoSeconds: 0, hostPlays: false });
+  addBots(first, 3);
+  await hostAction(first, 'start');
+  const played = first.plan.map((r) => r.question);
+  closeRoom(first);
+  const room = createRoom({ qualifiers: 4, autoSeconds: 0, hostPlays: false, avoidThemes: played });
+  addBots(room, 3);
+  await hostAction(room, 'start');
+  assert.equal(room.plan.filter((r) => played.includes(r.question)).length, 0);
+  closeRoom(room);
+});
