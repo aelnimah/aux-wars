@@ -100,6 +100,8 @@ async function itunesLookup(artist, title) {
 }
 
 export const music = {
+  /** True when the song came out in roughly the last 18 months. */
+  isBrandNew: (albumId) => (OFFLINE ? Promise.resolve(false) : isBrandNew(albumId)),
   /** Debug: every candidate the music source returns for a song. */
   async candidates(artist, title) {
     const out = [];
@@ -168,9 +170,7 @@ export const music = {
         .sort((x, y) => (y.rank || 0) - (x.rank || 0))
         .filter((t) => { const k = core(t.title_short || t.title); if (seen.has(k)) return false; seen.add(k); return true; })
         .slice(0, 16);
-      // Brand-new releases chart high but aren't classics yet: leave them out.
-      const fresh = await Promise.all(own.map((t) => isBrandNew(t.album?.id)));
-      const out = own.filter((t, i) => !fresh[i]).map((t) => ({ artist: name, title: t.title_short || t.title, resolved: shape(t) }));
+      const out = own.map((t) => ({ artist: name, title: t.title_short || t.title, albumId: t.album?.id, resolved: shape(t) }));
       if (out.length) cache.set(tk, out);
       return out;
     } catch {

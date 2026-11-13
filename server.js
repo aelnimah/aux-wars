@@ -109,7 +109,7 @@ async function api(req, res, url) {
         rows.push(`${r ? 'OK ' : 'MISS'} | ${artist} - ${title} | ${r ? `${r.name} | ${r.rank}` : ''}`);
       }
       const fresh = [];
-      if (url.searchParams.get('fresh')) for (const n of pack.fresh || []) fresh.push(`${n}: ${(await music.spotlightTracks(n)).slice(0, 6).map((t) => `${t.title} (${t.resolved.rank})`).join('; ') || 'NOTHING'}`);
+      if (url.searchParams.get('fresh')) for (const n of pack.fresh || []) { const top = (await music.spotlightTracks(n)).slice(0, 8); const nw = await Promise.all(top.map((t) => music.isBrandNew(t.albumId))); fresh.push(`${n}: ${top.map((t, i) => `${nw[i] ? 'NEW:' : ''}${t.title} (${t.resolved.rank})`).join('; ') || 'NOTHING'}`); }
       return send(res, 200, { theme: pack.question, rows, fresh });
     }
     if (route === '/api/qr') {

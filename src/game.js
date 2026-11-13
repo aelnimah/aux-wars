@@ -124,6 +124,13 @@ export function addBots(room, count = 3) {
 
 const EXTRA = 3; // extra candidates per round, so the least-known can be dropped
 
+// Brand-new releases rank high for a few months but nobody calls them classics yet: leave them out.
+const isNew = (t) => (config.music.isBrandNew ? config.music.isBrandNew(t.albumId).catch(() => false) : Promise.resolve(false));
+async function classics(tracks) {
+  const fresh = await Promise.all(tracks.map(isNew));
+  return tracks.filter((t, i) => !fresh[i]);
+}
+
 async function planGame(room) {
   const { qualifiers: q, packs } = room.settings;
   const pools = [];
@@ -135,7 +142,7 @@ async function planGame(room) {
       const recent = (n) => room.avoidThemes.has(`Best ${n} song?`);
       for (const name of [...shuffle(SPOTLIGHT_ARTISTS.filter((n) => !recent(n))), ...shuffle(SPOTLIGHT_ARTISTS.filter(recent))].slice(0, 10)) {
         if (made >= 3) break;
-        const tracks = await config.music.spotlightTracks(name);
+        const tracks = await classics((await config.music.spotlightTracks(name)).slice(0, ROUND_SIZE + EXTRA + 3));
         if (tracks.length >= ROUND_SIZE) {
           pools.push({ pack: { id: `spot-${name}`, emoji: '🎯', question: `Best ${name} song?` }, specs: shuffle(tracks.slice(0, ROUND_SIZE + EXTRA)) });
           made++;
@@ -180,8 +187,8 @@ async function planGame(room) {
     for (let j = 0; j < names.length; j += 5) {
       const lists = await Promise.all(names.slice(j, j + 5).map((n) => config.music.spotlightTracks(n).catch(() => [])));
       for (const tracks of lists) {
-        const top = tracks.slice(0, 6).filter((t) => !have.has(key(t.artist, t.title)) && !room.avoid.has(key(t.artist, t.title)));
-        if (top.length) pool.specs.push(top[Math.floor(Math.random() * top.length)]);
+        const top = shuffle(tracks.slice(0, 6).filter((t) => !have.has(key(t.artist, t.title)) && !room.avoid.has(key(t.artist, t.title))));
+        for (const t of top.slice(0, 3)) { if (!(await isNew(t))) { pool.specs.push(t); break; } }
       }
     }
     pool.specs = shuffle(pool.specs);
