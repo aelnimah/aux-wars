@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import QRCode from 'qrcode';
 import { PACKS } from './src/packs.js';
-import { rooms, createRoom, addPlayer, castVote, hostAction, viewFor, sweepRooms, GameError, QUALIFIER_OPTIONS, totalMatches } from './src/game.js';
+import { rooms, createRoom, addPlayer, castVote, hostAction, closeRoom, viewFor, sweepRooms, GameError, QUALIFIER_OPTIONS, totalMatches } from './src/game.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
@@ -110,6 +110,12 @@ async function api(req, res, url) {
   if (route === '/api/host') {
     const room = getRoom(body.code);
     needHost(room, body.key);
+    if (body.action === 'close') { // end the room for everyone; open streams are dropped so phones learn the game is over
+      closeRoom(room);
+      for (const l of listeners.get(room.code) || []) { try { l.res.end(); } catch { /* already closed */ } }
+      listeners.delete(room.code);
+      return send(res, 200, { ok: true });
+    }
     hostAction(room, body.action, body).catch((e) => console.error(e));
     return send(res, 200, { ok: true });
   }

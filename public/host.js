@@ -98,7 +98,8 @@ function shellHtml() {
   const body = { lobby: lobbyHtml, loading: loadingHtml, intro: introHtml, reveal: matchHtml, voting: matchHtml, results: matchHtml, champion: championHtml }[s.phase]();
   const p = s.progress;
   const prog = p ? `<div class="mid"><div class="progress"><span>${s.match?.kind === 'knockout' ? '⚔️ Knockout' : 'Qualifying'}</span><span>Match ${p.n} of ${p.of}</span></div><div class="track"><i style="width:${Math.round(((p.n - (s.phase === 'champion' ? 0 : 1)) / p.of) * 100)}%"></i></div></div>` : '<div></div>';
-  return `<div class="topbar"><span class="logo">AUX WARS</span>${prog}<span class="roomtag">Room <b>${esc(s.code)}</b> · ${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}</span></div>
+  return `<div class="topbar"><a class="logo" href="/" data-act="home" title="Main page">AUX WARS</a>${prog}<span class="roomtag">Room <b>${esc(s.code)}</b> · ${s.players.length} ${s.players.length === 1 ? 'player' : 'players'}
+      <button class="chip small" data-act="home">⌂ Home</button><button class="chip small" data-act="end">End game</button></span></div>
     ${blocked ? '<div class="banner" data-act="unmute">🔇 Your browser blocked sound. Click anywhere here to turn it on.</div>' : ''}
     ${err ? `<div class="err" style="margin-bottom:14px">${esc(err)}</div>` : ''}
     <div class="screen" data-key="${s.match && ['intro', 'reveal', 'voting', 'results'].includes(s.phase) ? 'm' + s.match.token : s.phase}">${body}</div>`;
@@ -111,7 +112,7 @@ function setupHtml() {
   const chip = (key, val, label) => `<button class="chip ${form[key] === val ? 'on' : ''}" data-act="set" data-setting="${key}" data-val="${val}">${label}</button>`;
   const len = (q, name, blurb) => `<button class="opt-card ${form.qualifiers === q ? 'on' : ''}" data-act="set" data-setting="qualifiers" data-val="${q}"><b>${name}</b><small>${q} rounds + ${q - 1} knockout matches · ${blurb}</small></button>`;
   return `<div class="setup">
-    <div><span class="logo" style="font-size:1.5rem">AUX WARS</span><h2 style="margin-top:14px">Let’s set up the game</h2></div>
+    <div><a class="logo" href="/" style="font-size:1.5rem">AUX WARS</a><h2 style="margin-top:14px">Let’s set up the game</h2></div>
     ${notice ? `<div class="banner">${esc(notice)}</div>` : ''}${err ? `<div class="err">${esc(err)}</div>` : ''}
     <div class="sec"><h3>How long?</h3><div class="row">${len(4, 'Quick', 'short and sweet')}${len(8, 'Classic', 'the full experience')}${len(16, 'Marathon', 'serious aux energy')}</div>
       <p class="est" style="margin-top:12px">Roughly <b>${estimate()} minutes</b> with these settings.</p></div>
@@ -263,6 +264,13 @@ async function perform(act, d = {}) {
     case 'hostvote':
       return api('/api/vote', { code: session.code, pid: session.hostPid, token: s.match.token, songId: d.id }).catch((e) => { err = e.message; render(); });
     case 'unmute': blocked = false; lastPlayKey = ''; syncAudio(); return render();
+    case 'home':
+      if (s && !['lobby', 'champion'].includes(s.phase) && !confirm('Go to the main page? The game keeps running, and you can resume it from the main page.')) return;
+      location.href = '/'; return;
+    case 'end':
+      if (!confirm('End this game for everyone? Players will be sent back to the main page.')) return;
+      await api('/api/host', { code: session.code, key: session.key, action: 'close' }).catch(() => {});
+      localStorage.removeItem('aux-host'); session = null; s = null; es?.close(); audio.pause(); return render();
     case 'again': return call('reset'); // back to the lobby with the same room and players
   }
 }
@@ -271,6 +279,7 @@ async function perform(act, d = {}) {
 app.addEventListener('click', (e) => {
   const t = e.target.closest('[data-act]');
   if (!t || t.disabled) return;
+  if (t.tagName === 'A') e.preventDefault();
   if (t.dataset.act === 'replay' && e.target.closest('[data-act=hostvote]')) return;
   perform(t.dataset.act, t.dataset);
 });

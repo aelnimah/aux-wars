@@ -80,6 +80,12 @@ export function resetGame(room) {
   room.paused = false;
 }
 
+export function closeRoom(room) {
+  clearTimers(room);
+  room.gameId++;
+  rooms.delete(room.code);
+}
+
 export function sweepRooms(now = Date.now()) {
   for (const [code, r] of rooms) if (now - r.createdAt > ROOM_TTL_MS) { clearTimers(r); rooms.delete(code); }
 }

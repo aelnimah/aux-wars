@@ -34,7 +34,8 @@ function gameHtml() {
   switch (s.phase) {
     case 'lobby':
       body = `<div class="center"><div class="em">🎧</div><h2>You’re in, ${esc(s.me.name)}!</h2><p class="muted">Waiting for the host to start. Keep an eye on the big screen.</p>
-        <div class="players" style="justify-content:center">${s.players.map((p) => pchip(p.name, '', p.id)).join('')}</div></div>`;
+        <div class="players" style="justify-content:center">${s.players.map((p) => pchip(p.name, '', p.id)).join('')}</div>
+        <button class="btn small" data-act="leave">Leave game</button></div>`;
       break;
     case 'loading':
       body = `<div class="center"><div class="spinner"></div><h2>${esc(s.loading?.question || 'Loading…')}</h2><p class="muted">${esc(s.loading?.label || '')}</p></div>`;
@@ -70,7 +71,7 @@ function gameHtml() {
       break;
   }
   const screen = m && ['intro', 'reveal', 'voting', 'results'].includes(s.phase) ? 'm' + m.token : s.phase;
-  return `<div class="topbar"><span class="logo">AUX WARS</span><span class="progress">${pchip(s.me.name, 'small')}${s.progress ? `<span>${s.progress.n}/${s.progress.of}</span>` : ''}</span></div>
+  return `<div class="topbar"><a class="logo" href="/" title="Main page">AUX WARS</a><span class="progress">${pchip(s.me.name, 'small')}${s.progress ? `<span>${s.progress.n}/${s.progress.of}</span>` : ''}</span></div>
     ${err ? `<div class="err" style="margin-bottom:12px">${esc(err)}</div>` : ''}<div class="screen" data-key="${screen}">${body}</div>`;
 }
 
@@ -94,6 +95,7 @@ app.addEventListener('click', async (e) => {
       err = ''; start(); keepAwake();
     } catch (x) { err = x.message; render(); }
   }
+  if (t.dataset.act === 'leave') { localStorage.removeItem('aux-player'); location.href = '/'; return; }
   if (t.dataset.act === 'vote' && s?.phase === 'voting') {
     const id = t.dataset.id;
     if (s.me.vote === id) return;

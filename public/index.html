@@ -6,6 +6,7 @@
 <main class="landing"><div>
   <h1 class="logo">AUX WARS</h1>
   <p>Eight songs. One vote each. Last track standing wins the aux.</p>
+  <div class="row" id="resume"></div>
   <div class="row"><a class="btn primary big" href="/host">🎧 Host a game</a></div>
   <form class="join-form" id="f">
     <input type="text" id="code" class="code-input" placeholder="ROOM CODE" maxlength="6" autocomplete="off" autocapitalize="characters">
@@ -13,6 +14,17 @@
   </form>
 </div></main>
 <script>
+  // offer to pick up where this device left off
+  (async () => {
+    const box = document.getElementById('resume');
+    const exists = async (code) => { try { return (await fetch('/api/exists?code=' + encodeURIComponent(code))).ok; } catch { return false; } };
+    const parse = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
+    const host = parse('aux-host'), player = parse('aux-player');
+    if (host && await exists(host.code)) box.insertAdjacentHTML('beforeend', '<a class="btn big" href="/host">▶ Resume hosting ' + host.code + '</a>');
+    else if (host) localStorage.removeItem('aux-host');
+    if (player && await exists(player.code)) box.insertAdjacentHTML('beforeend', '<a class="btn big" href="/join?room=' + player.code + '">▶ Rejoin ' + player.code + ' as ' + player.name.replace(/[<>&"]/g, '') + '</a>');
+    else if (player) localStorage.removeItem('aux-player');
+  })();
   document.getElementById('f').onsubmit = (e) => { e.preventDefault(); const c = document.getElementById('code').value.trim(); if (c) location.href = '/join?room=' + encodeURIComponent(c); };
 </script>
 </body></html>

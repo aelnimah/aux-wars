@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { config, createRoom, addPlayer, addBots, hostAction, castVote, viewFor, rooms, totalMatches, resetGame } from '../src/game.js';
+import { closeRoom, config, createRoom, addPlayer, addBots, hostAction, castVote, viewFor, rooms, totalMatches, resetGame } from '../src/game.js';
 
 config.botDelay = [0, 5];
 config.introMs = 0;
@@ -168,6 +168,14 @@ test('host can play too; Surprise mode mixes every theme incl. spotlight', async
   assert.equal(viewFor(room, 'host').hostPlayer.vote, room.match.songs[0].id);
   await assert.rejects(hostAction(room, 'kick', { pid: room.hostPid }), /That is you/).catch(() => {});
   resetGame(room);
+});
+
+test('closing a room removes it and stops its timers', async () => {
+  const room = createRoom({ qualifiers: 4, autoSeconds: 8 });
+  addPlayer(room, 'Ana');
+  await hostAction(room, 'start');
+  closeRoom(room);
+  assert.equal(rooms.has(room.code), false);
 });
 
 test.after(() => rooms.clear());
